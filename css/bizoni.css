@@ -359,7 +359,7 @@
   @media (max-width: 991px) {
     .lte-header-wrapper + .main-wrapper > .margin-default,
     .lte-header-wrapper + .margin-default {
-      padding-top: 80px;
+      padding-top: 100px !important;
       padding-bottom: 90px;
     }
   }
