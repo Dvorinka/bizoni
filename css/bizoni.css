@@ -9,7 +9,7 @@
     --main: #c42221;
     --second: #c42221;
     --gray: #f5f5f5;
-    --black: #222222;
+    --black: #222222 !important;
     --white: #ffffff;
     --red: #c42221;
     --green: #01be4d;
@@ -312,7 +312,7 @@
     color: var(--white);
     position: relative;
     z-index: 20;
-    text-align: center;
+    text-align: left;
   }
   .error404.lte-bg-404 .lte-header-wrapper {
     background-color: transparent;
