@@ -31106,12 +31106,8 @@
     width: 90% !important;
   }
   .two-per-row {
-    display: flex !important;
+    display: block !important;
     flex-wrap: nowrap !important;
-  }
-  .two-per-row li {
-    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
-    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
   }
 }
 
@@ -31121,12 +31117,8 @@
     width: 90% !important;
   }
   .two-per-row {
-    display: flex !important;
+    display: block !important;
     flex-wrap: nowrap !important;
-  }
-  .two-per-row li {
-    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
-    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
   }
 }
 
@@ -31136,12 +31128,8 @@
     width: 60% !important;
   }
   .two-per-row {
-    display: flex !important;
+    display: block !important;
     flex-wrap: nowrap !important;
-  }
-  .two-per-row li {
-    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
-    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
   }
 }
 
@@ -31158,6 +31146,9 @@
     flex: 1 1 50% !important; /* Each item takes up 50% of the row */
     box-sizing: border-box !important; /* Ensures padding doesn't affect width */
   }
+  .obleceni div{
+    margin: 10px !important;
+  }
 }
 
 /* Extra large devices (large laptops and desktops, 1200px and up) */
@@ -31172,5 +31163,9 @@
   .two-per-row li {
     flex: 1 1 50% !important; /* Each item takes up 50% of the row */
     box-sizing: border-box !important; /* Ensures padding doesn't affect width */
+  }
+
+  .obleceni div{
+    margin: 10px !important;
   }
 }
