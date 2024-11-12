@@ -26640,7 +26640,6 @@
   .woocommerce.lte-products-slider ul.products {
     margin-left: 0;
     margin-right: 0;
-    flex-wrap: nowrap;
   }
   .woocommerce.lte-products-slider.woocommerce ul.products li.product {
     float: none;
@@ -31100,3 +31099,78 @@
     height: 25px;
     width: 25px;
   }
+
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+  .obleceni{
+    width: 90% !important;
+  }
+  .two-per-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+  .two-per-row li {
+    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
+    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
+  }
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+  .obleceni{
+    width: 90% !important;
+  }
+  .two-per-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+  .two-per-row li {
+    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
+    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
+  }
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+  .obleceni{
+    width: 60% !important;
+  }
+  .two-per-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+  .two-per-row li {
+    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
+    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
+  }
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+  .obleceni{
+    width: 45% !important;
+  }
+  .two-per-row {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+  }
+  .two-per-row li {
+    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
+    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
+  }
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+  .obleceni{
+    width: 35% !important;
+  }
+  .two-per-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+  }
+  .two-per-row li {
+    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
+    box-sizing: border-box !important; /* Ensures padding doesn't affect width */
+  }
+}
