@@ -31169,3 +31169,35 @@
     margin: 10px !important;
   }
 }
+
+.socials-contact{
+  display: inline-block;
+  border-radius: 50%;
+  height: 60px;
+  width: 60px;
+  background: rgb(0,0,0);
+  margin-top: 10px;
+}
+
+
+.instagram:hover{
+  background: linear-gradient(119deg, rgba(255,0,150,1) 0%, rgba(255,159,0,1) 100%);  
+}
+
+
+.facebook:hover{
+  background: linear-gradient(119deg, rgba(0,51,255,1) 0%, rgba(0,154,255,1) 100%);
+}
+
+.youtube:hover{
+  background: linear-gradient(119deg, rgba(255,0,0,1) 0%, rgba(217,0,0,1) 100%);
+}
+
+.socials-contact ion-icon{
+  color: white;
+  height: 60px;
+}
+
+.lte-num{
+  color: #d3d3d3 !important;
+}
