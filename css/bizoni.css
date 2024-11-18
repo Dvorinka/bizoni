@@ -31201,3 +31201,37 @@
 .lte-num{
   color: #d3d3d3 !important;
 }
+
+.Badge{
+  background-color: #e92b1e;
+  color: #fff;
+  line-height: 1;
+  padding: .25rem .375rem;
+  position: relative;
+  text-decoration: none;
+  text-decoration-color: transparent;
+  text-transform: uppercase;
+  -webkit-transition: color .25s linear, outline-offset .25s linear, text-decoration-color .25s linear;
+  transition: color .25s linear, outline-offset .25s linear, text-decoration-color .25s linear;
+  white-space: nowrap;
+  z-index: 5;
+}
+
+.Badge, .Date {
+  display: inline-block;
+  font-family: Maison Neue Extended, Arial, Helvetica Neue, Helvetica, sans-serif;
+  font-size: .75rem;
+  font-weight: 600;
+}
+
+  .Badge:after {
+    border-color: #b51d12 transparent transparent;
+    border-style: solid;
+    border-width: .75rem .75rem 0 0;
+    bottom: 0;
+    content: "";
+    height: 0;
+    position: absolute;
+    right: -.75rem;
+    width: 0;
+}
