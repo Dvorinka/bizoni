@@ -31161,7 +31161,7 @@
     flex-wrap: wrap !important;
   }
   .two-per-row li {
-    flex: 1 1 50% !important; /* Each item takes up 50% of the row */
+    flex: 3 2 30% !important; /* Each item takes up 50% of the row */
     box-sizing: border-box !important; /* Ensures padding doesn't affect width */
   }
 
