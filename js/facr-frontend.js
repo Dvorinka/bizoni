@@ -164,6 +164,7 @@
     if(autoIdx === -1) autoIdx = items.length - 1;
     const idx = Math.min(state.matchIndex || autoIdx, items.length-1);
     const { comp, match:m } = items[idx];
+    const compName = truncate(escapeHTML(comp.name || comp.code || 'Soutěž'), 60);
 
     const homeLogo = m.home_logo_url || 'img/logo.png';
     const awayLogo = m.away_logo_url || 'img/logo.png';
@@ -182,6 +183,7 @@
 
     root.innerHTML = `
       <div class="lte-football-upcoming">
+        <div class="facr-comp-title lte-football-date" style="text-align:center; margin-bottom:6px;">${compName}</div>
         <div class="facr-upcoming-header">
           <button id="facr-prev" class="facr-nav">◀</button>
           <span class="lte-header lte-header-upcoming">Zápasy (${idx+1}/${items.length})</span>
@@ -219,12 +221,8 @@
       const twoH = 2*60*60*1000;
       const threeD = 3*24*60*60*1000;
       if(diff > 0){
-        if(!isToday){
-          // Already shown in the middle bar; avoid duplication
-          cd.textContent = '';
-        }else{
-          cd.textContent = `Začátek za ${fmtCountdown(diff)}`;
-        }
+        // Always show a visible countdown, including on non-today future matches
+        cd.textContent = `Začátek za ${fmtCountdown(diff)}`;
       }else if(Math.abs(diff) <= twoH){
         cd.textContent = 'Právě probíhá';
       }else if(-diff < threeD){

@@ -144,3 +144,20 @@
 
 	display: block;
 }
+
+/* FACR upcoming mobile visibility overrides */
+@media (max-width: 767px) {
+  /* Show the Zápasy (x/y) header on phones */
+  .lte-football-upcoming .lte-header-upcoming {
+    display: inline-block !important;
+    font-size: 18px;
+    line-height: 1.2;
+    padding: 2px 8px;
+  }
+
+  /* Ensure countdown line is visible and centered */
+  #facr-countdown.lte-football-date {
+    display: block !important;
+    text-align: center !important;
+  }
+}
