@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<team>
+  <category name="men">
+    <member>
+      <name>Janečka Martin</name>
+      <number>13</number>
+      <role>Hráč</role>
+      <image>img/muzi/Janečka_Martin_1.png</image>
+    </member>
+    <member>
+      <name>Hubinka Adam</name>
+      <number>5</number>
+      <role>Hráč</role>
+      <image>img/muzi/Hubinka_Adam_1.png</image>
+    </member>
+    <member>
+      <name>Zapletal Martin</name>
+      <number>8</number>
+      <role>Hráč</role>
+      <image>img/muzi/Zapletal_Martin_1.png</image>
+    </member>
+    <member>
+      <name>Drobný Michal</name>
+      <number>3</number>
+      <role>Hráč</role>
+      <image>img/muzi/Drobný_Michal_1.png</image>
+    </member>
+    <member>
+      <name>Prokeš Martin</name>
+      <number>12</number>
+      <role>Hráč</role>
+      <image>img/muzi/Prokeš_Martin_1.png</image>
+    </member>
+    <member>
+      <name>Janečka Radek</name>
+      <number>16</number>
+      <role>Brankář</role>
+      <image>img/muzi/Janečka_Radek_1.png</image>
+    </member>
+    <member>
+      <name>Mačuda Jakub</name>
+      <number></number>
+      <role></role>
+      <image>img/muzi/Mačuda_Jakub_1.png</image>
+    </member>
+    <member>
+      <name>Svízela Jakub</name>
+      <number>19</number>
+      <role>Hráč</role>
+      <image>img/muzi/Svízela_Jakub_1.png</image>
+    </member>
+    <member>
+      <name>Šipka Jan</name>
+      <number>14</number>
+      <role>Hráč</role>
+      <image>img/muzi/Šipka_Jan_1.png</image>
+    </member>
+    <member>
+      <name>Polák David</name>
+      <number>9</number>
+      <role>Hráč</role>
+      <image>img/muzi/Polák_David_1.png</image>
+    </member>
+    <member>
+      <name>Kočiš Lukáš</name>
+      <number>6</number>
+      <role>Hráč</role>
+      <image>img/muzi/Kočiš_Lukáš_1.png</image>
+    </member>
+    <member>
+      <name>Malý Lukáš</name>
+      <number>21</number>
+      <role>Hráč</role>
+      <image>img/muzi/Malý_Lukáš_1.png</image>
+    </member>
+    <member>
+      <name>Řičica Jakub</name>
+      <number></number>
+      <role>sekretář klubu</role>
+      <image>img/muzi/Řičica_Jakub_1.png</image>
+    </member>
+    <member>
+      <name>Moravec David</name>
+      <number></number>
+      <role>místopředseda klubu</role>
+      <image>img/muzi/Moravec_David_1.png</image>
+    </member>
+    <member>
+      <name>Janečková Vladimíra</name>
+      <number></number>
+      <role>vedoucí týmu</role>
+      <image>img/muzi/Janečková_Vladimíra_1.png</image>
+    </member>
+    <member>
+      <name>Stodůlka Štěpán</name>
+      <number></number>
+      <role>PR manažer klubu</role>
+      <image>img/muzi/Stodůlka_Štěpán_1.png</image>
+    </member>
+    <member>
+      <name>Stojaspal Marek</name>
+      <number></number>
+      <role></role>
+      <image>img/muzi/Stojaspal_Marek_1.png</image>
+    </member>
+    <member>
+      <name>Puškáč Lubomír</name>
+      <number></number>
+      <role></role>
+      <image>img/muzi/Puškáč_Lubomír_1.png</image>
+    </member>
+    <member>
+      <name>Náplava Jaroslav</name>
+      <number></number>
+      <role></role>
+      <image>img/muzi/Náplava_Jaroslav_1.png</image>
+    </member>
+  </category>
+
+
+  <category name="women">
+    <member>
+      <name>Šrámková Sára</name>
+      <number>12</number>
+      <role>hráč</role>
+      <image>img/zeny/Šrámková_Sára_1.png</image>
+    </member>
+    <member>
+      <name>Baná Barbora</name>
+      <number>21</number>
+      <role>hráč</role>
+      <image>img/zeny/Baná_Barbora_1.png</image>
+    </member>
+    <member>
+      <name>Majerechová Eliška</name>
+      <number>69</number>
+      <role>hráč</role>
+      <image>img/zeny/Majerechová_Eliška_1.png</image>
+    </member>
+    <member>
+      <name>Maleňáková Adriana</name>
+      <number>11</number>
+      <role>hráč</role>
+      <image>img/zeny/Maleňáková_Adriana_1.png</image>
+    </member>
+    <member>
+      <name>Adamíková Andrea</name>
+      <number>6</number>
+      <role>hráč</role>
+      <image>img/zeny/Adamíková_Andrea_1.png</image>
+    </member>
+    <member>
+      <name>Dufková Martina</name>
+      <number>17</number>
+      <role>hráč</role>
+      <image>img/zeny/Dufková_Martina_1.png</image>
+    </member>
+    <member>
+      <name>Gorčíková Anna</name>
+      <number>16</number>
+      <role>hráč</role>
+      <image>img/zeny/Gorčíková_Anna_1.png</image>
+    </member>
+    <member>
+      <name>Mrázková Denisa</name>
+      <number>4</number>
+      <role>hráč</role>
+      <image>img/zeny/Mrázková_Denisa_1.png</image>
+    </member>
+    <member>
+      <name>Prokešová Terezie</name>
+      <number>1</number>
+      <role>hráč</role>
+      <image>img/zeny/Prokešová_Terezie_1.png</image>
+    </member>
+    <member>
+      <name>Sekaninová Markéta</name>
+      <number>7</number>
+      <role>hráč</role>
+      <image>img/zeny/Sekaninová_Markéta_1.png</image>
+    </member>
+    <member>
+      <name>Štichová Tereza</name>
+      <number>10</number>
+      <role>hráč</role>
+      <image>img/zeny/Štichová_Tereza_1.png</image>
+    </member>
+  </category>
+</team>
