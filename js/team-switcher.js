@@ -13,7 +13,7 @@
   // Autoscroll timers
   let autoTimer = null;
   let resumeTimer = null;
-  const AUTO_DELAY = 2000; // 5s
+  const AUTO_DELAY = 3500; // 5s
   const RESUME_AFTER = 10000; // resume 10s after user interaction
 
   function qs(sel, root = document) { return root.querySelector(sel); }
@@ -87,12 +87,6 @@
     }
     // Ask the theme to re-init this slider completely so arrows/loop/order are consistent
     const sliderContainer = wrapper.closest('.lte-swiper-slider');
-    // For consistent sequential navigation, disable coverflow loop and multi-view
-    if (sliderContainer && sliderContainer.dataset) {
-      sliderContainer.dataset.effect = 'slide'; // avoid forced loop in coverflow
-      sliderContainer.dataset.loop = '0';
-      sliderContainer.dataset.breakpoints = '1;1;1;1;1;1'; // 1 per view on all widths
-    }
     if (sliderContainer) sliderContainer.classList.remove('lte-inited');
     if (typeof window.initSwiperWrappers === 'function') {
       try { window.initSwiperWrappers(); } catch (_) {}

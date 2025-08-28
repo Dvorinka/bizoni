@@ -9,7 +9,7 @@
     </member>
     <member>
       <name>Hubinka Adam</name>
-      <number>5</number>
+      <number>18</number>
       <role>Hráč</role>
       <image>img/muzi/Hubinka_Adam_1.png</image>
     </member>
@@ -20,16 +20,16 @@
       <image>img/muzi/Zapletal_Martin_1.png</image>
     </member>
     <member>
+      <name>Lapčík Martin</name>
+      <number>5</number>
+      <role>Hráč</role>
+      <image>img/muzi/Lapčík_Martin_1.png</image>
+    </member>
+    <member>
       <name>Drobný Michal</name>
       <number>3</number>
       <role>Hráč</role>
       <image>img/muzi/Drobný_Michal_1.png</image>
-    </member>
-    <member>
-      <name>Prokeš Martin</name>
-      <number>12</number>
-      <role>Hráč</role>
-      <image>img/muzi/Prokeš_Martin_1.png</image>
     </member>
     <member>
       <name>Janečka Radek</name>
@@ -39,9 +39,21 @@
     </member>
     <member>
       <name>Mačuda Jakub</name>
-      <number></number>
-      <role></role>
+      <number>33</number>
+      <role>Hráč</role>
       <image>img/muzi/Mačuda_Jakub_1.png</image>
+    </member>
+    <member>
+      <name>Příplata Filip</name>
+      <number>9</number>
+      <role>Hráč</role>
+      <image>img/muzi/Příplata_Filip_1.png</image>
+    </member>
+    <member>
+      <name>Brázdil Petr</name>
+      <number>12</number>
+      <role>Hráč</role>
+      <image>img/muzi/Brázdil_Petr_1.png</image>
     </member>
     <member>
       <name>Svízela Jakub</name>
@@ -57,7 +69,7 @@
     </member>
     <member>
       <name>Polák David</name>
-      <number>9</number>
+      <number>11</number>
       <role>Hráč</role>
       <image>img/muzi/Polák_David_1.png</image>
     </member>
@@ -81,7 +93,7 @@
     </member>
     <member>
       <name>Moravec David</name>
-      <number></number>
+      <number>44</number>
       <role>místopředseda klubu</role>
       <image>img/muzi/Moravec_David_1.png</image>
     </member>
@@ -93,26 +105,26 @@
     </member>
     <member>
       <name>Stodůlka Štěpán</name>
-      <number></number>
+      <number>96</number>
       <role>PR manažer klubu</role>
       <image>img/muzi/Stodůlka_Štěpán_1.png</image>
     </member>
     <member>
       <name>Stojaspal Marek</name>
       <number></number>
-      <role></role>
+      <role>Trenér mládeže</role>
       <image>img/muzi/Stojaspal_Marek_1.png</image>
     </member>
     <member>
       <name>Puškáč Lubomír</name>
       <number></number>
-      <role></role>
+      <role>Vedoucí týmu</role>
       <image>img/muzi/Puškáč_Lubomír_1.png</image>
     </member>
     <member>
       <name>Náplava Jaroslav</name>
-      <number></number>
-      <role></role>
+      <number>88</number>
+      <role>Předseda klubu</role>
       <image>img/muzi/Náplava_Jaroslav_1.png</image>
     </member>
   </category>
@@ -184,6 +196,12 @@
       <number>10</number>
       <role>hráč</role>
       <image>img/zeny/Štichová_Tereza_1.png</image>
+    </member>
+    <member>
+      <name>Prokeš Martin</name>
+      <number>12</number>
+      <role>Trenér</role>
+      <image>img/muzi/Prokeš_Martin_1.png</image>
     </member>
   </category>
 </team>
