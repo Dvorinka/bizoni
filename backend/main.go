@@ -59,6 +59,14 @@ func dataPath() string {
 	return "/app/data/club.json"
 }
 
+func staticPath() string {
+	if p := os.Getenv("STATIC_PATH"); p != "" {
+		return p
+	}
+	// Default mount point for the site in the container
+	return "/app/site"
+}
+
 type ClubTable struct {
 	Name         string `json:"name"`
 	ClubID       string `json:"club_id"`
@@ -154,12 +162,23 @@ func main() {
 		w.Write([]byte(";"))
 	})
 
+	// Static file server for the frontend
+	fs := http.FileServer(http.Dir(staticPath()))
+	// Serve common asset prefixes explicitly
+	mux.Handle("/img/", fs)
+	mux.Handle("/css/", fs)
+	mux.Handle("/js/", fs)
+	mux.Handle("/blog/", fs)
+	mux.Handle("/zapasy/", fs)
+	// Fallback: serve index.html and other root-level pages
+	mux.Handle("/", fs)
+
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":80",
 		Handler: mux,
 	}
 	go func() {
-		log.Println("backend listening on :8080")
+		log.Println("server listening on :80")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}

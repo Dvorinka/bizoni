@@ -11,5 +11,5 @@ RUN apk add --no-cache ca-certificates \
 # Optional: timezone data for precise Prague time
 # RUN apk add --no-cache tzdata
 COPY --from=build /app/server /app/server
-EXPOSE 8080
+EXPOSE 80
 ENTRYPOINT ["/app/server"]
