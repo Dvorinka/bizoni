@@ -3,16 +3,27 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
+	"image"
+	"image/color"
+	"image/draw"
+	"image/png"
+	_ "image/jpeg"
 )
 
 const (
@@ -20,6 +31,146 @@ const (
 	clubType = "futsal"
 	baseURL  = "https://facr.tdvorak.dev"
 )
+
+// Paths
+func dataPath() string {
+	if p := os.Getenv("DATA_PATH"); p != "" {
+		return p
+	}
+	// Default: Docker volume path (writable)
+	return "/app/data/club.json"
+}
+
+// ---------------- Image normalization for blog thumbnails ----------------
+// Target dimensions for blog images
+const (
+    blogImgW = 1600
+    blogImgH = 969
+)
+
+// avgLuma computes average luminance of an image (0..255)
+func avgLuma(img image.Image) float64 {
+    b := img.Bounds()
+    if b.Empty() { return 0 }
+    var sum uint64
+    var n uint64
+    for y := b.Min.Y; y < b.Max.Y; y += 4 { // sample every 4th row for speed
+        for x := b.Min.X; x < b.Max.X; x += 4 { // sample every 4th column
+            r,g,bv,_ := img.At(x,y).RGBA()
+            r8 := float64(r>>8)
+            g8 := float64(g>>8)
+            b8 := float64(bv>>8)
+            // Rec. 601 approximate luma
+            l := 0.299*r8 + 0.587*g8 + 0.114*b8
+            if l < 0 { l = 0 }
+            if l > 255 { l = 255 }
+            sum += uint64(l)
+            n++
+        }
+    }
+    if n == 0 { return 0 }
+    return float64(sum)/float64(n)
+}
+
+// fitWithin returns destination size that fits source into max size, without upscaling
+func fitWithin(sw, sh, mw, mh int) (int, int) {
+    if sw <= 0 || sh <= 0 { return 0, 0 }
+    if sw <= mw && sh <= mh {
+        return sw, sh
+    }
+    wr := float64(mw) / float64(sw)
+    hr := float64(mh) / float64(sh)
+    r := wr
+    if hr < wr { r = hr }
+    dw := int(float64(sw) * r)
+    dh := int(float64(sh) * r)
+    if dw < 1 { dw = 1 }
+    if dh < 1 { dh = 1 }
+    return dw, dh
+}
+
+// scaleNearest performs nearest-neighbor downscaling from src to a new RGBA of size (dw, dh)
+func scaleNearest(src image.Image, dw, dh int) *image.RGBA {
+    dst := image.NewRGBA(image.Rect(0,0,dw,dh))
+    sb := src.Bounds()
+    sw := sb.Dx()
+    sh := sb.Dy()
+    for y := 0; y < dh; y++ {
+        sy := sb.Min.Y + int(float64(y)*float64(sh)/float64(dh))
+        for x := 0; x < dw; x++ {
+            sx := sb.Min.X + int(float64(x)*float64(sw)/float64(dw))
+            dst.Set(x, y, src.At(sx, sy))
+        }
+    }
+    return dst
+}
+
+// normalizeBlogImage decodes any supported image (PNG/JPEG) and writes a 1600x969 PNG with letterboxing (black/white)
+func normalizeBlogImage(r io.Reader, outPath string) error {
+    img, _, err := image.Decode(r)
+    if err != nil {
+        return fmt.Errorf("decode image: %w", err)
+    }
+    // Choose background based on average luminance
+    l := avgLuma(img)
+    bg := color.Black
+    if l > 160 { // bright image -> white bg; tweak threshold as needed
+        bg = color.White
+    }
+    // Compute fitted size (no upscaling)
+    srcB := img.Bounds()
+    dw, dh := fitWithin(srcB.Dx(), srcB.Dy(), blogImgW, blogImgH)
+    var scaled image.Image
+    if dw == srcB.Dx() && dh == srcB.Dy() {
+        scaled = img
+    } else {
+        scaled = scaleNearest(img, dw, dh)
+    }
+    // Compose centered on canvas
+    canvas := image.NewRGBA(image.Rect(0,0,blogImgW,blogImgH))
+    draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C:bg}, image.Point{}, draw.Src)
+    offX := (blogImgW - dw) / 2
+    offY := (blogImgH - dh) / 2
+    draw.Draw(canvas, image.Rect(offX, offY, offX+dw, offY+dh), scaled, scaled.Bounds().Min, draw.Over)
+    // Write PNG atomically
+    if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil { return err }
+    tmp := outPath + ".tmp"
+    f, err := os.Create(tmp)
+    if err != nil { return err }
+    enc := png.Encoder{CompressionLevel: png.BestSpeed}
+    if err := enc.Encode(f, canvas); err != nil {
+        f.Close(); _ = os.Remove(tmp); return fmt.Errorf("encode png: %w", err)
+    }
+    f.Close()
+    _ = os.Remove(outPath)
+    if err := os.Rename(tmp, outPath); err != nil { return err }
+    return nil
+}
+
+func staticPath() string {
+	if p := os.Getenv("STATIC_PATH"); p != "" {
+		return p
+	}
+	// Default: use current working directory when running locally
+	cwd, err := os.Getwd()
+	if err == nil && cwd != "" {
+		// If CWD contains index.html, assume it's the site root
+		if _, err := os.Stat(filepath.Join(cwd, "index.html")); err == nil {
+			return cwd
+		}
+		// Otherwise, try parent directory (common when running from ./backend)
+		parent := filepath.Dir(cwd)
+		if parent != "" {
+			if _, err := os.Stat(filepath.Join(parent, "index.html")); err == nil {
+				return parent
+			}
+		}
+		// Fallback to CWD even if index.html not found
+		return cwd
+	}
+	// Fallback to container default if CWD is unavailable
+	return "/app/site"
+}
 
 type ClubDetail struct {
 	Name         string `json:"name"`
@@ -52,19 +203,293 @@ type ClubDetail struct {
 	} `json:"competitions"`
 }
 
-func dataPath() string {
-	if p := os.Getenv("DATA_PATH"); p != "" {
-		return p
+// ---------------- Admin Basic Auth ----------------
+func adminCreds() (string, string) {
+	u := os.Getenv("ADMIN_USER")
+	p := os.Getenv("ADMIN_PASS")
+	if u == "" {
+		u = "info@tdvorak.dev"
 	}
-	return "/app/data/club.json"
+	if p == "" {
+		p = "%8s3Yad*!b3*t"
+	}
+	return u, p
 }
 
-func staticPath() string {
-	if p := os.Getenv("STATIC_PATH"); p != "" {
+func checkBasicAuth(r *http.Request) bool {
+	user, pass := adminCreds()
+	auth := r.Header.Get("Authorization")
+	if !strings.HasPrefix(auth, "Basic ") {
+		return false
+	}
+	b64 := strings.TrimPrefix(auth, "Basic ")
+	dec, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return false
+	}
+	parts := strings.SplitN(string(dec), ":", 2)
+	if len(parts) != 2 {
+		return false
+	}
+	return parts[0] == user && parts[1] == pass
+}
+
+func requireBasicAuth(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", "Basic realm=admin")
+	http.Error(w, "unauthorized", http.StatusUnauthorized)
+}
+
+func basicAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !checkBasicAuth(r) {
+			requireBasicAuth(w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// Compute next blog numeric ID by scanning blog/*.html
+func nextBlogID(siteRoot string) (int, error) {
+	blogDir := filepath.Join(siteRoot, "blog")
+	entries, err := os.ReadDir(blogDir)
+	if err != nil {
+		return 0, err
+	}
+	re := regexp.MustCompile(`^(\d{4})\.html$`)
+	max := -1
+	for _, e := range entries {
+		m := re.FindStringSubmatch(e.Name())
+		if len(m) == 2 {
+			if n, err := strconv.Atoi(m[1]); err == nil && n > max {
+				max = n
+			}
+		}
+	}
+	if max < 0 {
+		return 0, fmt.Errorf("no posts found to derive id")
+	}
+	return max + 1, nil
+}
+
+// Minimal HTML escaper for title
+func htmlEscape(s string) string {
+	s = strings.ReplaceAll(s, "&", "&amp;")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
+	s = strings.ReplaceAll(s, `"`, "&quot;")
+	return s
+}
+
+// ---------------- YouTube: periodic refresh and persistence ----------------
+func videosScheduler(ctx context.Context) {
+	// Refresh once a day
+	for {
+		select {
+		case <-time.After(24 * time.Hour):
+			if err := refreshVideos(ctx); err != nil {
+				log.Printf("videos refresh error: %v", err)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func refreshVideos(ctx context.Context) error {
+	client := &http.Client{Timeout: 30 * time.Second}
+	base := "https://youtube.tdvorak.dev"
+	ch := ytChannel()
+	u := base + "/channel_videos?channel=" + url.QueryEscape(ch)
+	var resp YTChannelResp
+	if err := getJSON(ctx, client, u, &resp); err != nil {
+		return fmt.Errorf("yt get: %w", err)
+	}
+	items := resp.Videos
+	if len(items) > 5 {
+		items = items[:5]
+	}
+	vc.mu.Lock()
+	vc.data.FetchedAt = time.Now()
+	vc.data.Channel = resp.Channel
+	vc.data.Items = items
+	vc.mu.Unlock()
+	if err := writeVideosJSON(); err != nil {
+		log.Printf("warn: write videos json: %v", err)
+	}
+	return nil
+}
+
+func writeVideosJSON() error {
+	path := videosPath()
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return fmt.Errorf("mkdir: %w", err)
+	}
+	vc.mu.RLock()
+	payload := struct {
+		FetchedAt time.Time `json:"fetched_at"`
+		Channel   string    `json:"channel"`
+		Items     []YTVideo `json:"items"`
+	}{FetchedAt: vc.data.FetchedAt, Channel: vc.data.Channel, Items: vc.data.Items}
+	vc.mu.RUnlock()
+	b, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal: %w", err)
+	}
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, b, 0644); err != nil {
+		return fmt.Errorf("write tmp: %w", err)
+	}
+	_ = os.Remove(path)
+	if err := os.Rename(tmp, path); err != nil {
+		return fmt.Errorf("rename: %w", err)
+	}
+	// Also mirror to static site path for fast fetch by frontend
+	// Attempt best-effort; log warnings but do not fail the main write
+	// Target files: <STATIC_PATH>/data/videos.json and <STATIC_PATH>/data/video.json
+	func() {
+		defer func() { _ = recover() }()
+		sp := staticPath()
+		if sp == "" {
+			return
+		}
+		dataDir := filepath.Join(sp, "data")
+		if err := os.MkdirAll(dataDir, 0755); err != nil {
+			log.Printf("warn: mkdir static data dir: %v", err)
+			return
+		}
+		// Write videos.json
+		dest1 := filepath.Join(dataDir, "videos.json")
+		if err := os.WriteFile(dest1, b, 0644); err != nil {
+			log.Printf("warn: write static videos.json: %v", err)
+		}
+		// Write video.json (alias) to match frontend expectation
+		dest2 := filepath.Join(dataDir, "video.json")
+		if err := os.WriteFile(dest2, b, 0644); err != nil {
+			log.Printf("warn: write static video.json: %v", err)
+		}
+	}()
+	return nil
+}
+
+func videosPath() string {
+	if p := os.Getenv("VIDEOS_PATH"); p != "" {
 		return p
 	}
-	// Default mount point for the site in the container
-	return "/app/site"
+	// Default: Docker volume path (writable)
+	return "/app/data/videos.json"
+}
+
+func ytChannel() string {
+	if c := os.Getenv("YT_CHANNEL"); c != "" {
+		return c
+	}
+	// Default YouTube channel
+	return "@FCBizoniUH"
+}
+
+// BlogItem represents a simple blog card item for the homepage
+type BlogItem struct {
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Link        string    `json:"link"`
+	Image       string    `json:"image"`
+	MTime       time.Time `json:"mtime"`
+	Categories  []string  `json:"categories,omitempty"`
+}
+
+func extractCategories(path string) []string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	s := string(b)
+	// match <meta name="category" content="Category">
+	re := regexp.MustCompile(`(?is)<meta name="category" content="([^"]+)"`)
+	matches := re.FindAllStringSubmatch(s, -1)
+	categories := make([]string, len(matches))
+	for i, match := range matches {
+		categories[i] = match[1]
+	}
+	return categories
+}
+
+// listLatestBlogs scans the blog and image folders under the provided site root and returns the latest N posts
+func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
+	blogDir := filepath.Join(siteRoot, "blog")
+	imgDir := filepath.Join(siteRoot, "img", "blog")
+	entries, err := os.ReadDir(blogDir)
+	if err != nil {
+		return nil, fmt.Errorf("readdir blog: %w", err)
+	}
+	re := regexp.MustCompile(`^(\d{4})\.html$`)
+	var items []BlogItem
+	for _, e := range entries {
+		name := e.Name()
+		if !re.MatchString(name) {
+			continue
+		}
+		id := strings.TrimSuffix(name, ".html")
+		// Title and categories extraction from blog HTML
+		blogPath := filepath.Join(blogDir, name)
+		title := extractTitle(blogPath)
+		cats := extractCategories(blogPath)
+		// Determine mod time - prefer image modtime if exists, else html
+		mtime := time.Time{}
+		htmlInfo, err1 := os.Stat(filepath.Join(blogDir, name))
+		if err1 == nil {
+			mtime = htmlInfo.ModTime()
+		}
+		if imgInfo, err2 := os.Stat(filepath.Join(imgDir, id+".png")); err2 == nil {
+			// If image is newer, use that as a proxy for recency
+			if imgInfo.ModTime().After(mtime) {
+				mtime = imgInfo.ModTime()
+			}
+		}
+		items = append(items, BlogItem{
+			ID:          id,
+			Title:       title,
+			Link:        "/blog/" + id + ".html",
+			Image:       "/img/blog/" + id + ".png",
+			MTime:       mtime,
+			Categories:  cats,
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		// Descending by mod time, fallback to numeric ID desc
+		if !items[i].MTime.Equal(items[j].MTime) {
+			return items[i].MTime.After(items[j].MTime)
+		}
+		ii, _ := strconv.Atoi(items[i].ID)
+		jj, _ := strconv.Atoi(items[j].ID)
+		return ii > jj
+	})
+	if limit > 0 && len(items) > limit {
+		items = items[:limit]
+	}
+	return items, nil
+}
+
+// extractTitle finds the first <h1>...</h1> and returns its inner text (very simple, best-effort)
+func extractTitle(path string) string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	s := string(b)
+	// match <h1 ...>Title</h1>
+	re := regexp.MustCompile(`(?is)<h1[^>]*>(.*?)</h1>`) // non-greedy
+	m := re.FindStringSubmatch(s)
+	if len(m) >= 2 {
+		// strip HTML tags inside, if any
+		inner := m[1]
+		// remove any nested tags crudely
+		inner = regexp.MustCompile(`(?is)<[^>]+>`).ReplaceAllString(inner, "")
+		inner = strings.TrimSpace(inner)
+		return inner
+	}
+	return ""
 }
 
 type ClubTable struct {
@@ -108,6 +533,65 @@ type cache struct {
 
 var c cache
 
+// ---- YouTube videos cache ----
+type YTVideo struct {
+	VideoID       string `json:"video_id"`
+	Title         string `json:"title"`
+	Length        string `json:"length"`
+	ThumbnailURL  string `json:"thumbnail_url"`
+	ViewsText     string `json:"views_text"`
+	Views         int    `json:"views"`
+	PublishedText string `json:"published_text"`
+	PublishedDate string `json:"published_date"`
+}
+
+type YTChannelResp struct {
+	Channel         string    `json:"channel"`
+	ChannelURL      string    `json:"channel_url"`
+	SubscribersText string    `json:"subscribers_text"`
+	Subscribers     int       `json:"subscribers"`
+	Videos          []YTVideo `json:"videos"`
+}
+
+type videosCache struct {
+	mu   sync.RWMutex
+	data struct {
+		FetchedAt time.Time `json:"fetched_at"`
+		Channel   string    `json:"channel"`
+		Items     []YTVideo `json:"items"`
+	}
+}
+
+var vc videosCache
+
+// simple in-memory rate limiter for manual videos refresh
+type rateLimiter struct {
+	mu   sync.Mutex
+	hits []time.Time
+}
+
+func (rl *rateLimiter) Allow(now time.Time, limit int, per time.Duration) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	// drop timestamps older than window
+	cutoff := now.Add(-per)
+	i := 0
+	for _, t := range rl.hits {
+		if t.After(cutoff) {
+			rl.hits[i] = t
+			i++
+		}
+	}
+	rl.hits = rl.hits[:i]
+	if len(rl.hits) >= limit {
+		return false
+	}
+	rl.hits = append(rl.hits, now)
+	return true
+}
+
+var videosPostLimiter rateLimiter
+
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -120,6 +604,12 @@ func main() {
 
 	// scheduler
 	go scheduler(ctx)
+	go videosScheduler(ctx)
+
+	// Initial videos fetch on startup to warm cache
+	if err := refreshVideos(ctx); err != nil {
+		log.Printf("initial videos refresh error: %v", err)
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -162,37 +652,416 @@ func main() {
 		w.Write([]byte(";"))
 	})
 
-	// Static file server for the frontend
-	fs := http.FileServer(http.Dir(staticPath()))
-	// Serve common asset prefixes explicitly
-	mux.Handle("/img/", fs)
-	mux.Handle("/css/", fs)
-	mux.Handle("/js/", fs)
-	mux.Handle("/blog/", fs)
-	mux.Handle("/zapasy/", fs)
-	// Fallback: serve index.html and other root-level pages
-	mux.Handle("/", fs)
-
-	srv := &http.Server{
-		Addr:    ":80",
-		Handler: mux,
-	}
-	go func() {
-		log.Println("server listening on :80")
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("server error: %v", err)
+	// Blog API: latest N posts from filesystem
+	mux.HandleFunc("/api/blog/latest", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
 		}
-	}()
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		limit := 5
+		if q := r.URL.Query().Get("limit"); q != "" {
+			if n, err := strconv.Atoi(q); err == nil && n > 0 {
+				limit = n
+			}
+		}
+		items, err := listLatestBlogs(staticPath(), limit)
+		if err != nil {
+			log.Printf("listLatestBlogs error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(items)
+	})
 
-	<-ctx.Done()
-	ctxShut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_ = srv.Shutdown(ctxShut)
+	// Videos API
+	mux.HandleFunc("/api/videos/latest", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet:
+			vc.mu.RLock()
+			items := vc.data.Items
+			fetched := vc.data.FetchedAt
+			channel := vc.data.Channel
+			vc.mu.RUnlock()
+			if len(items) == 0 {
+				// lazy refresh if empty
+				if err := refreshVideos(r.Context()); err != nil {
+					log.Printf("refreshVideos error: %v", err)
+				}
+				vc.mu.RLock()
+				items = vc.data.Items
+				fetched = vc.data.FetchedAt
+				channel = vc.data.Channel
+				vc.mu.RUnlock()
+			}
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			_ = json.NewEncoder(w).Encode(struct {
+				FetchedAt time.Time `json:"fetched_at"`
+				Channel   string    `json:"channel"`
+				Items     []YTVideo `json:"items"`
+			}{FetchedAt: fetched, Channel: channel, Items: items})
+		case http.MethodPost:
+			// rate limit: 5 requests per minute for manual refresh
+			if !videosPostLimiter.Allow(time.Now(), 5, time.Minute) {
+				http.Error(w, "rate limit: max 5 refresh per minute", http.StatusTooManyRequests)
+				return
+			}
+			if err := refreshVideos(r.Context()); err != nil {
+				log.Printf("manual refreshVideos error: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			w.WriteHeader(http.StatusMethodNotAllowed)
+		}
+	})
+
+	// Serve raw persisted videos json for debugging/preview
+	mux.HandleFunc("/data/videos.json", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		b, err := os.ReadFile(videosPath())
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Write(b)
+	})
+
+	// Blog creation API (admin)
+	mux.HandleFunc("/api/blog/new", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if !checkBasicAuth(r) {
+			requireBasicAuth(w)
+			return
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		// Expect multipart form with: title, content (HTML), image (png), categories (comma-separated)
+		if err := r.ParseMultipartForm(20 << 20); err != nil { // 20MB
+			http.Error(w, "invalid form", http.StatusBadRequest)
+			return
+		}
+		title := strings.TrimSpace(r.FormValue("title"))
+		htmlContent := strings.TrimSpace(r.FormValue("content"))
+		catsRaw := strings.TrimSpace(r.FormValue("categories"))
+		var cats []string
+		if catsRaw != "" {
+			for _, p := range strings.Split(catsRaw, ",") {
+				c := strings.TrimSpace(p)
+				if c != "" {
+					cats = append(cats, c)
+				}
+			}
+		}
+		if title == "" || htmlContent == "" {
+			http.Error(w, "missing title or content", http.StatusBadRequest)
+			return
+		}
+		f, fh, err := r.FormFile("image")
+		if err != nil {
+			http.Error(w, "missing image", http.StatusBadRequest)
+			return
+		}
+		defer f.Close()
+		// Accept PNG/JPG/JPEG; always store normalized PNG 1600x969
+		name := strings.ToLower(fh.Filename)
+		if !(strings.HasSuffix(name, ".png") || strings.HasSuffix(name, ".jpg") || strings.HasSuffix(name, ".jpeg")) {
+			http.Error(w, "image must be .png, .jpg, or .jpeg", http.StatusBadRequest)
+			return
+		}
+		site := staticPath()
+		// Determine next ID
+		nid, err := nextBlogID(site)
+		if err != nil {
+			http.Error(w, "failed to compute next id", http.StatusInternalServerError)
+			return
+		}
+		idStr := fmt.Sprintf("%04d", nid)
+		// Write image (normalize to 1600x969 with letterboxing)
+		imgDir := filepath.Join(site, "img", "blog")
+		if err := os.MkdirAll(imgDir, 0755); err != nil {
+			http.Error(w, "storage error: img dir", http.StatusInternalServerError)
+			return
+		}
+		imgPath := filepath.Join(imgDir, idStr+".png")
+		if err := normalizeBlogImage(f, imgPath); err != nil {
+			http.Error(w, "image processing failed", http.StatusInternalServerError)
+			return
+		}
+		// Read template and replace
+		tplPath := filepath.Join(site, "blog", "0030.html")
+		tplBytes, err := os.ReadFile(tplPath)
+		if err != nil {
+			http.Error(w, "template not found", http.StatusInternalServerError)
+			return
+		}
+		s := string(tplBytes)
+		// Replace H1 title inside page header (match when lte-header is among multiple classes)
+		reH1 := regexp.MustCompile(`(?is)<h1[^>]*class="[^"]*\blte-header\b[^"]*"[^>]*>.*?</h1>`)
+		s = reH1.ReplaceAllString(s, "<h1 class=\"lte-header\">"+htmlEscape(title)+"</h1>")
+		// Replace main hero image to point to new id
+		reImg := regexp.MustCompile(`(?is)src=\"\.\./img/blog/\d{4}\.png\"`)
+		s = reImg.ReplaceAllString(s, "src=\"../img/blog/"+idStr+".png\"")
+		// Replace post top image similarly if found with different quoting
+		reImg2 := regexp.MustCompile(`(?is)src=\"\.\./img/blog/\d{4}\.png\"`)
+		s = reImg2.ReplaceAllString(s, "src=\"../img/blog/"+idStr+".png\"")
+		// Replace the main content inside <div class="text lte-text-page clearfix"> ... </div>
+		reContent := regexp.MustCompile(`(?is)<div class="text lte-text-page clearfix">[\s\S]*?</div>`)
+		s = reContent.ReplaceAllString(s, "<div class=\"text lte-text-page clearfix\">\n"+htmlContent+"\n</div>")
+		// Inject categories as <meta name="category" content="..."> before </head>
+		if len(cats) > 0 {
+			var meta string
+			for _, c := range cats {
+				meta += "<meta name=\"category\" content=\"" + htmlEscape(c) + "\">\n"
+			}
+			reHead := regexp.MustCompile(`(?is)</head>`) 
+			s = reHead.ReplaceAllString(s, meta+"</head>")
+		}
+		// Write new blog html
+		blogDir := filepath.Join(site, "blog")
+		if err := os.MkdirAll(blogDir, 0755); err != nil {
+			http.Error(w, "storage error: blog dir", http.StatusInternalServerError)
+			return
+		}
+		htmlPath := filepath.Join(blogDir, idStr+".html")
+		if err := os.WriteFile(htmlPath, []byte(s), 0644); err != nil {
+			http.Error(w, "cannot write blog (is STATIC_PATH read-only?)", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id":      idStr,
+			"link":    "/blog/" + idStr + ".html",
+			"image":   "/img/blog/" + idStr + ".png",
+			"message": "created",
+		})
+	})
+
+	// Blog fetch (admin): returns title, content html, image for editing
+	mux.HandleFunc("/api/blog/get", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if !checkBasicAuth(r) {
+			requireBasicAuth(w)
+			return
+		}
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		id := strings.TrimSpace(r.URL.Query().Get("id"))
+		re := regexp.MustCompile(`^\d{4}$`)
+		if !re.MatchString(id) {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		path := filepath.Join(staticPath(), "blog", id+".html")
+		b, err := os.ReadFile(path)
+		if err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		s := string(b)
+		reH1 := regexp.MustCompile(`(?is)<h1[^>]*class="[^"]*\blte-header\b[^"]*"[^>]*>(.*?)</h1>`)
+		m := reH1.FindStringSubmatch(s)
+		title := ""
+		if len(m) >= 2 {
+			// strip HTML tags inside, if any
+			inner := m[1]
+			// remove any nested tags crudely
+			inner = regexp.MustCompile(`(?is)<[^>]+>`).ReplaceAllString(inner, "")
+			inner = strings.TrimSpace(inner)
+			title = inner
+		}
+		reContent := regexp.MustCompile(`(?is)<div class="text lte-text-page clearfix">([\s\S]*?)</div>`)
+		mc := reContent.FindStringSubmatch(s)
+		content := ""
+		if len(mc) >= 2 {
+			content = strings.TrimSpace(mc[1])
+		}
+		cats := extractCategories(path)
+		img := "/img/blog/" + id + ".png"
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": id, "title": title, "content_html": content, "image": img, "categories": cats})
+	})
+
+	// Blog edit (admin): update title/content and optionally replace image
+	mux.HandleFunc("/api/blog/edit", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if !checkBasicAuth(r) {
+			requireBasicAuth(w)
+			return
+		}
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		// Expect multipart form with: title, content (HTML), image (png), categories (comma-separated)
+		if err := r.ParseMultipartForm(25 << 20); err != nil {
+			http.Error(w, "invalid form", http.StatusBadRequest)
+			return
+		}
+		id := strings.TrimSpace(r.FormValue("id"))
+		re := regexp.MustCompile(`^\d{4}$`)
+		if !re.MatchString(id) {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		title := strings.TrimSpace(r.FormValue("title"))
+		htmlContent := strings.TrimSpace(r.FormValue("content"))
+		catsRaw := strings.TrimSpace(r.FormValue("categories"))
+		var cats []string
+		if catsRaw != "" {
+			for _, p := range strings.Split(catsRaw, ",") {
+				c := strings.TrimSpace(p)
+				if c != "" {
+					cats = append(cats, c)
+				}
+			}
+		}
+		if title == "" || htmlContent == "" {
+			http.Error(w, "missing title or content", http.StatusBadRequest)
+			return
+		}
+		site := staticPath()
+		if f, fh, err := r.FormFile("image"); err == nil {
+			defer f.Close()
+			// Accept PNG/JPG/JPEG; always store normalized PNG 1600x969
+			name := strings.ToLower(fh.Filename)
+			if !(strings.HasSuffix(name, ".png") || strings.HasSuffix(name, ".jpg") || strings.HasSuffix(name, ".jpeg")) {
+				http.Error(w, "image must be .png, .jpg, or .jpeg", http.StatusBadRequest)
+				return
+			}
+			imgPath := filepath.Join(site, "img", "blog", id+".png")
+			if err := os.MkdirAll(filepath.Dir(imgPath), 0755); err != nil {
+				http.Error(w, "storage error", http.StatusInternalServerError)
+				return
+			}
+			if err := normalizeBlogImage(f, imgPath); err != nil {
+				http.Error(w, "image processing failed", http.StatusInternalServerError)
+				return
+			}
+		}
+		hPath := filepath.Join(site, "blog", id+".html")
+		b, err := os.ReadFile(hPath)
+		if err != nil {
+			http.Error(w, "not found", http.StatusNotFound)
+			return
+		}
+		s := string(b)
+		reH1 := regexp.MustCompile(`(?is)<h1[^>]*class="lte-header"[^>]*>.*?</h1>`)
+		s = reH1.ReplaceAllString(s, "<h1 class=\"lte-header\">"+htmlEscape(title)+"</h1>")
+		reContent := regexp.MustCompile(`(?is)<div class="text lte-text-page clearfix">[\s\S]*?</div>`)
+		s = reContent.ReplaceAllString(s, "<div class=\"text lte-text-page clearfix\">\n"+htmlContent+"\n</div>")
+		// Replace categories meta tags
+		reMeta := regexp.MustCompile(`(?is)<meta name="category" content="[^"]*"\s*/?>\s*`)
+		s = reMeta.ReplaceAllString(s, "")
+		if len(cats) > 0 {
+			var meta string
+			for _, c := range cats {
+				meta += "<meta name=\"category\" content=\"" + htmlEscape(c) + "\">\n"
+			}
+			reHead := regexp.MustCompile(`(?is)</head>`) 
+			s = reHead.ReplaceAllString(s, meta+"</head>")
+		}
+		if err := os.WriteFile(hPath, []byte(s), 0644); err != nil {
+			http.Error(w, "cannot write", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	// Blog delete (admin)
+	mux.HandleFunc("/api/blog/delete", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if !checkBasicAuth(r) {
+			requireBasicAuth(w)
+			return
+		}
+		if r.Method != http.MethodDelete {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		id := strings.TrimSpace(r.URL.Query().Get("id"))
+		re := regexp.MustCompile(`^\d{4}$`)
+		if !re.MatchString(id) {
+			http.Error(w, "invalid id", http.StatusBadRequest)
+			return
+		}
+		site := staticPath()
+		_ = os.Remove(filepath.Join(site, "blog", id+".html"))
+		_ = os.Remove(filepath.Join(site, "img", "blog", id+".png"))
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+    // Static file server for the frontend
+    sp := staticPath()
+    log.Printf("serving static from: %s", sp)
+    fs := http.FileServer(http.Dir(sp))
+    // Serve common asset prefixes explicitly
+    mux.Handle("/img/", fs)
+    mux.Handle("/css/", fs)
+    mux.Handle("/js/", fs)
+    // Protect /admin/ with Basic Auth
+    mux.Handle("/admin/", basicAuth(http.StripPrefix("/admin/", http.FileServer(http.Dir(filepath.Join(staticPath(), "admin"))))))
+    mux.Handle("/blog/", fs)
+    mux.Handle("/zapasy/", fs)
+    // Fallback: serve index.html at root, otherwise delegate to static file server
+    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+            http.ServeFile(w, r, filepath.Join(sp, "index.html"))
+            return
+        }
+        fs.ServeHTTP(w, r)
+    })
+
+    port := os.Getenv("PORT")
+    if port == "" { port = "8080" }
+    srv := &http.Server{
+        Addr:    ":" + port,
+        Handler: mux,
+    }
+    go func() {
+        log.Printf("server listening on :%s", port)
+        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Fatalf("server error: %v", err)
+        }
+    }()
+
+    <-ctx.Done()
+    ctxShut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    _ = srv.Shutdown(ctxShut)
 }
 
 func okCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, DELETE, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 }
 

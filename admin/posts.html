@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Příspěvky – Bizoni UH</title>
+  <link rel="icon" type="image/x-icon" href="../img/logo.png" />
+  <link rel="stylesheet" href="../css/bootstrap.css" />
+  <link rel="stylesheet" href="../css/bizoni.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <script src="../js/admin-auth.js"></script>
+  <style>
+    body { padding: 24px; }
+    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    nav a { margin-right: 8px; text-decoration: none; }
+    .badge { background: #111827; color: #fff; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; font-size: 14px; }
+    th { background: #f9fafb; font-weight: 700; }
+    .thumb { width: 80px; height: 48px; object-fit: cover; border:1px solid #e5e7eb; border-radius: 6px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    .toolbar { margin: 12px 0; display:flex; gap:8px; align-items:center; }
+    .search { border:1px solid #d1d5db; padding: 6px 10px; border-radius: 8px; min-width: 260px; }
+    .status { margin: 12px 0; color: #6b7280; }
+  </style>
+</head>
+<body class="admin-with-sidenav">
+  <aside class="admin-sidenav">
+    <div class="brand"><img src="../img/logo.png" alt=""/> Bizoni UH</div>
+    <nav>
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a class="active" href="/admin/posts.html">Příspěvky</a>
+      <a href="/admin/new.html">Nový článek</a>
+      <a href="/admin/index.html">Přehled</a>
+      <a href="/" target="_blank">↗ Zpět na web</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="footer">Admin</div>
+  </aside>
+  <header>
+    <h1 style="margin:0; font-size: 20px;">Příspěvky</h1>
+    <nav>
+      <a href="/admin/" class="badge">Přehled</a>
+      <a href="/admin/new.html" class="badge">Nový článek</a>
+      <a href="/" class="badge">Domů</a>
+    </nav>
+  </header>
+
+  <div class="toolbar">
+    <input type="search" id="q" class="search" placeholder="Hledat v titulcích…" />
+    <span class="muted" id="counter"></span>
+  </div>
+
+  <div class="status" id="status">Načítám…</div>
+
+  <div class="table-responsive">
+    <table id="posts">
+      <thead>
+        <tr>
+          <th style="width:80px;">Obrázek</th>
+          <th>ID</th>
+          <th>Titulek</th>
+          <th>Datum</th>
+          <th>Odkazy</th>
+          <th>Akce</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const tbody = document.querySelector('#posts tbody');
+    const q = document.getElementById('q');
+    const counter = document.getElementById('counter');
+    let allItems = [];
+
+    function fmtDate(iso){
+      if (!iso) return '';
+      try { const d = new Date(iso); return d.toLocaleDateString(); } catch { return iso; }
+    }
+
+    function render(list){
+      tbody.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      list.forEach(it => {
+        const tr = document.createElement('tr');
+        const tdImg = document.createElement('td');
+        const img = document.createElement('img'); img.src = it.image; img.className = 'thumb'; img.alt='';
+        tdImg.appendChild(img);
+        const tdId = document.createElement('td'); tdId.textContent = it.id;
+        const tdTitle = document.createElement('td'); tdTitle.textContent = it.title || ('Článek ' + it.id);
+        const tdDate = document.createElement('td'); tdDate.textContent = fmtDate(it.mtime || it.MTime);
+        const tdLinks = document.createElement('td');
+        const aView = document.createElement('a'); aView.href = it.link; aView.target = '_blank'; aView.textContent = 'Otevřít'; aView.style.marginRight='8px';
+        const aImg = document.createElement('a'); aImg.href = it.image; aImg.target = '_blank'; aImg.textContent = 'Obrázek';
+        tdLinks.appendChild(aView); tdLinks.appendChild(aImg);
+        const tdActions = document.createElement('td');
+        const btnEdit = document.createElement('button'); btnEdit.textContent = 'Upravit'; btnEdit.style.marginRight='8px';
+        btnEdit.addEventListener('click', ()=>{
+          window.location.href = '/admin/new.html?edit=' + encodeURIComponent(it.id);
+        });
+        const btnDel = document.createElement('button'); btnDel.textContent = 'Smazat'; btnDel.style.background = '#991b1b'; btnDel.style.color='#fff';
+        btnDel.addEventListener('click', async ()=>{
+          if (!confirm(`Opravdu smazat článek ${it.id}?`)) return;
+          try {
+            const res = await fetch('/api/blog/delete?id='+encodeURIComponent(it.id), { method: 'DELETE', headers: window.AdminAuth ? window.AdminAuth.getHeaders() : {} });
+            if (!res.ok) throw new Error('HTTP '+res.status);
+            // remove from UI
+            tr.remove();
+          } catch (e) {
+            alert('Smazání selhalo');
+            console.error(e);
+          }
+        });
+        tdActions.appendChild(btnEdit);
+        tdActions.appendChild(btnDel);
+        tr.appendChild(tdImg); tr.appendChild(tdId); tr.appendChild(tdTitle); tr.appendChild(tdDate); tr.appendChild(tdLinks); tr.appendChild(tdActions);
+        frag.appendChild(tr);
+      });
+      tbody.appendChild(frag);
+      counter.textContent = `Zobrazeno: ${list.length} / ${allItems.length}`;
+    }
+
+    function applyFilter(){
+      const needle = (q.value||'').toLowerCase();
+      if (!needle){ render(allItems); return; }
+      render(allItems.filter(it => (it.title||'').toLowerCase().includes(needle) || (it.id||'').includes(needle)));
+    }
+
+    q.addEventListener('input', applyFilter);
+
+    async function load(){
+      statusEl.textContent = 'Načítám…';
+      try {
+        const res = await fetch('/api/blog/latest?limit=10000');
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        let items = await res.json();
+        if (!Array.isArray(items)) items = [];
+        // numeric desc
+        items.sort((a,b)=>{
+          const ai = parseInt(a.id,10); const bi = parseInt(b.id,10);
+          if (!isNaN(ai) && !isNaN(bi)) return bi-ai;
+          return (b.id||'').localeCompare(a.id||'');
+        });
+        allItems = items;
+        statusEl.textContent = '';
+        render(allItems);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = 'Chyba při načítání.';
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

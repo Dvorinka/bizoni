@@ -1,0 +1,70 @@
+/* Homepage 4-grid overrides: 15px left padding for the whole grid */
+#latest-blog-items.row {
+  margin-left: 0 !important; /* neutralize negative margins if any */
+  padding-left: 15px !important;
+  padding-bottom: 24px; /* ensure space below grid */
+}
+
+/* If the secondary grid is used in the future, keep spacing consistent */
+#other-blog-items.row {
+  padding-bottom: 24px;
+}
+
+/* Ensure hero carousel text does not sit behind the fixed nav */
+.lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left {
+  padding-top: 90px; /* default desktop */
+}
+@media (max-width: 1199px) {
+  .lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left { padding-top: 100px; }
+}
+@media (max-width: 767px) {
+  .lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left { padding-top: 110px; }
+}
+
+/* Normalize heading/button spacing inside all hero slides so they align consistently */
+.lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left h2.lte-header {
+  margin: 0 0 16px !important;
+  line-height: 1.1;
+  /* Keep heading block a consistent height to align buttons across slides */
+  min-height: 2.4em; /* ~2 lines */
+  display: -webkit-box;
+  line-clamp: 2; /* standard property for supporting linters */
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left .lte-btn-wrap {
+  margin-top: 16px !important;
+}
+
+/* Center the slide content (heading + button) vertically within the slide */
+.lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left .elementor-widget-wrap {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 90vh; /* even taller hero on desktop */
+}
+
+/* Neutralize spacer widgets inside hero slides so they don't push content down */
+.lte-slider-zoom .lte-zs-slider-inner .elementor-widget-spacer {
+  display: none !important;
+}
+
+@media (max-width: 1199px) {
+  .lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left .elementor-widget-wrap { min-height: 75vh; }
+}
+@media (max-width: 767px) {
+  .lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left .elementor-widget-wrap { min-height: 65vh; }
+  /* Slightly larger heading on small screens for readability */
+  .lte-slider-zoom .lte-zs-slider-inner .lte-col-slider-left h2.lte-header { font-size: 1.9rem; }
+}
+
+/* --- Blog page cleanups --- */
+/* Hide tag hashtags and sharing block under post */
+.blog-info-post-bottom,
+.tags-line,
+.lte-sharing,
+.lte-related { display: none !important; }
+
+/* Normalize paragraphs inside blog content: no bottom margin */
+.text.lte-text-page.clearfix p { margin: 0 0 0; }

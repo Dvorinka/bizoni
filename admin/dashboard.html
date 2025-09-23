@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard – Bizoni UH</title>
+  <link rel="icon" type="image/x-icon" href="../img/logo.png" />
+  <link rel="stylesheet" href="../css/bootstrap.css" />
+  <link rel="stylesheet" href="../css/bizoni.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --brand: #111827;
+      --accent: #2563eb;
+    }
+    body { background: var(--bg); padding: 24px; }
+    header { display:flex; gap:16px; justify-content: space-between; align-items:center; margin-bottom: 20px; }
+    .badge { background: var(--brand); color: #fff; padding: 8px 12px; border-radius: 999px; font-size: 12px; text-decoration: none; }
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr; }
+    @media (min-width: 1000px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .card { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); }
+    .card > .hd { display:flex; align-items:center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #f9fafb; }
+    .card > .bd { padding: 16px; }
+    .muted { color: var(--muted); }
+    .btn { display:inline-flex; gap:8px; align-items:center; border:1px solid var(--border); background:#fff; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .btn.danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+    .row { display:flex; gap: 10px; flex-wrap: wrap; }
+    .row > * { flex: 1 1 auto; }
+    .input, textarea { width: 100%; border:1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+    .list { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:12px; }
+    .thumb { border:1px solid var(--border); border-radius: 10px; overflow: hidden; background:#fff; }
+    .thumb img { width:100%; height:140px; object-fit:cover; }
+    .thumb .cap { padding:8px 10px; font-size: 13px; }
+    .kpi { display:grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+    .kpi .it { background:#f3f4f6; border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center; }
+    small.code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#f3f4f6; border:1px solid var(--border); border-radius:6px; padding:2px 6px; }
+  </style>
+</head>
+<body class="admin-with-sidenav">
+  <aside class="admin-sidenav">
+    <div class="brand"><img src="../img/logo.png" alt=""/> Bizoni UH</div>
+    <nav>
+      <a class="active" href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/posts.html">Příspěvky</a>
+      <a href="/admin/new.html">Nový článek</a>
+      <a href="/admin/index.html">Přehled</a>
+      <a href="/" target="_blank">↗ Zpět na web</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="footer">Admin</div>
+  </aside>
+  <header>
+    <h1 style="margin:0; font-size:22px;">Admin Dashboard</h1>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <a class="badge" href="/admin/index.html">← Přehled</a>
+      <a class="badge" href="/admin/posts.html">Moje příspěvky</a>
+      <a class="badge" href="/admin/new.html">Nový článek</a>
+      <a class="badge" href="../index.html">Zpět na web</a>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Left: YouTube highlights -->
+    <section class="card">
+      <div class="hd">
+        <div>
+          <strong>Youtube – sestřihy zápasů</strong>
+          <div class="muted" id="yt-status">Načítám…</div>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn" id="btn-yt-reload">Načíst</button>
+          <button class="btn primary" id="btn-yt-refresh">Aktualizovat (POST)</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="kpi">
+          <div class="it"><div class="muted">Kanál</div><div id="yt-channel">–</div></div>
+          <div class="it"><div class="muted">Počet</div><div id="yt-count">–</div></div>
+          <div class="it"><div class="muted">Staženo</div><div id="yt-fetched">–</div></div>
+        </div>
+        <div class="list" id="yt-list"></div>
+      </div>
+    </section>
+
+    <!-- Right: Latest blogs -->
+    <section class="card">
+      <div class="hd">
+        <div>
+          <strong>Nejnovější články</strong>
+          <div class="muted" id="blog-latest-status">Načítám…</div>
+        </div>
+        <div class="row" style="justify-content:flex-end;">
+          <button class="btn" id="btn-blog-reload">Načíst</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="list" id="blog-latest"></div>
+      </div>
+    </section>
+
+    <!-- Create post -->
+    <section class="card">
+      <div class="hd"><strong>Vytvořit nový článek</strong></div>
+      <div class="bd">
+        <form id="form-new" enctype="multipart/form-data">
+          <div class="row">
+            <div><label class="muted">Titulek</label><input class="input" type="text" name="title" required /></div>
+          </div>
+          <div class="row">
+            <div style="flex:1 1 100%">
+              <label class="muted">Kategorie (oddělené čárkou)</label>
+              <input class="input" type="text" name="categories" placeholder="Zápasy, O nás" />
+              <div class="muted" style="margin-top:6px">Předdefinované:</div>
+              <div class="row" style="gap:12px; align-items:center;">
+                <label><input type="checkbox" class="cat-predef" value="Zápasy"/> Zápasy</label>
+                <label><input type="checkbox" class="cat-predef" value="O nás"/> O nás</label>
+                <label><input type="checkbox" class="cat-predef" value="Novinky"/> Novinky</label>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex:1 1 100%"><label class="muted">Obsah (HTML)</label><textarea name="content" rows="8" required></textarea></div>
+          </div>
+          <div class="row">
+            <div><label class="muted">Obrázek (.png)</label><input class="input" type="file" name="image" accept="image/png" required /></div>
+          </div>
+          <div class="row" style="justify-content:flex-end; margin-top:8px;">
+            <button class="btn primary" type="submit">Vytvořit</button>
+          </div>
+          <div class="muted" id="new-status"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Edit/Delete post -->
+    <section class="card">
+      <div class="hd"><strong>Upravit / smazat článek</strong></div>
+      <div class="bd">
+        <form id="form-load" class="row" style="align-items:flex-end;">
+          <div style="max-width:160px;">
+            <label class="muted">ID příspěvku</label>
+            <input class="input" type="text" name="id" placeholder="0010" required />
+          </div>
+          <button class="btn" type="submit">Načíst</button>
+          <div class="muted" id="edit-load-status"></div>
+        </form>
+        <form id="form-edit" enctype="multipart/form-data" style="display:none; margin-top:12px;">
+          <input type="hidden" name="id" />
+          <div class="row">
+            <div><label class="muted">Titulek</label><input class="input" type="text" name="title" required /></div>
+          </div>
+          <div class="row">
+            <div style="flex:1 1 100%"><label class="muted">Kategorie (oddělené čárkou)</label><input class="input" type="text" name="categories" placeholder="Zápasy, O nás" /></div>
+          </div>
+          <div class="row">
+            <div style="flex:1 1 100%"><label class="muted">Obsah (HTML)</label><textarea name="content" rows="8" required></textarea></div>
+          </div>
+          <div class="row">
+            <div><label class="muted">Nový obrázek (.png) – volitelný</label><input class="input" type="file" name="image" accept="image/png" /></div>
+          </div>
+          <div class="row" style="justify-content: space-between; margin-top:8px;">
+            <button class="btn primary" type="submit">Uložit změny</button>
+            <button class="btn danger" id="btn-delete" type="button">Smazat</button>
+          </div>
+          <div class="muted" id="edit-status"></div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Small helpers
+    const fmtDate = (iso) => {
+      if (!iso) return '–';
+      try { return new Date(iso).toLocaleString('cs-CZ'); } catch (_) { return iso; }
+    };
+
+    // ---------- YOUTUBE ----------
+    async function loadVideos() {
+      const s = document.getElementById('yt-status');
+      const c = document.getElementById('yt-channel');
+      const n = document.getElementById('yt-count');
+      const f = document.getElementById('yt-fetched');
+      const list = document.getElementById('yt-list');
+      try {
+        s.textContent = 'Načítám…';
+        const res = await fetch('/api/videos/latest');
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        c.textContent = data.channel || '–';
+        n.textContent = (data.items||[]).length;
+        f.textContent = fmtDate(data.fetched_at);
+        list.innerHTML='';
+        (data.items||[]).forEach(v => {
+          const el = document.createElement('div');
+          el.className = 'thumb';
+          el.innerHTML = `
+            <img src="${v.thumbnail_url}" alt=""/>
+            <div class="cap"><strong>${v.title||''}</strong><br/><span class="muted">${v.published_text||''}</span></div>
+          `;
+          list.appendChild(el);
+        });
+        s.textContent = 'Hotovo';
+      } catch (e) {
+        console.error(e);
+        s.textContent = 'Chyba při načítání';
+      }
+    }
+
+    async function refreshVideos() {
+      const s = document.getElementById('yt-status');
+      try {
+        s.textContent = 'Aktualizuji…';
+        const res = await fetch('/api/videos/latest', { method: 'POST' });
+        if (!res.ok && res.status !== 204) throw new Error('HTTP '+res.status);
+        await loadVideos();
+      } catch (e) {
+        console.error(e);
+        s.textContent = 'Chyba při aktualizaci';
+      }
+    }
+
+    // ---------- BLOG LATEST ----------
+    async function loadBlogLatest() {
+      const s = document.getElementById('blog-latest-status');
+      const grid = document.getElementById('blog-latest');
+      try {
+        s.textContent = 'Načítám…';
+        const res = await fetch('/api/blog/latest?limit=12');
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const items = await res.json();
+        grid.innerHTML='';
+        if (!Array.isArray(items) || items.length === 0) {
+          grid.innerHTML = '<div class="muted">Žádné příspěvky.</div>';
+        } else {
+          items.forEach(it => {
+            const el = document.createElement('a');
+            el.className = 'thumb';
+            el.href = it.link;
+            el.target = '_blank';
+            el.innerHTML = `
+              <img src="${it.image}" alt=""/>
+              <div class="cap"><strong>${it.title || ('Článek '+it.id)}</strong><br/><span class="muted">ID ${it.id}</span></div>
+            `;
+            grid.appendChild(el);
+          });
+        }
+        s.textContent = `Nalezeno: ${Array.isArray(items)? items.length : 0}`;
+      } catch (e) {
+        console.error(e);
+        s.textContent = 'Chyba při načítání';
+      }
+    }
+
+    // ---------- BLOG CREATE ----------
+    function reconcileCategoriesToInput(containerSelector) {
+      const form = document.querySelector(containerSelector);
+      if (!form) return;
+      const input = form.querySelector('input[name="categories"]');
+      const checks = form.querySelectorAll('.cat-predef, .cat-predef-edit');
+      const set = new Set();
+      // include from text input first
+      if (input && input.value.trim()) {
+        input.value.split(',').forEach(s => { const v = s.trim(); if (v) set.add(v); });
+      }
+      // include from checked boxes
+      checks.forEach(ch => { if (ch.checked) set.add(ch.value); });
+      if (input) input.value = Array.from(set).join(', ');
+    }
+
+    document.getElementById('form-new').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const out = document.getElementById('new-status');
+      out.textContent = 'Odesílám…';
+      try {
+        reconcileCategoriesToInput('#form-new');
+        const fd = new FormData(ev.target);
+        const res = await fetch('/api/blog/new', { method: 'POST', body: fd });
+        if (!res.ok) {
+          const t = await res.text();
+          throw new Error('HTTP '+res.status+' '+t);
+        }
+        const data = await res.json();
+        out.textContent = 'Vytvořeno: '+ data.id;
+        ev.target.reset();
+        // reset checkboxes
+        document.querySelectorAll('#form-new .cat-predef').forEach(ch => ch.checked = false);
+        loadBlogLatest();
+      } catch (e) {
+        console.error(e);
+        out.textContent = 'Chyba: '+e.message;
+      }
+    });
+
+    // ---------- BLOG EDIT/DELETE ----------
+    document.getElementById('form-load').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const st = document.getElementById('edit-load-status');
+      st.textContent = 'Načítám…';
+      const id = new FormData(ev.target).get('id').toString().trim();
+      try {
+        const res = await fetch('/api/blog/get?id='+encodeURIComponent(id));
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        const form = document.getElementById('form-edit');
+        form.style.display='block';
+        form.elements['id'].value = data.id;
+        form.elements['title'].value = data.title || '';
+        form.elements['content'].value = data.content_html || '';
+        form.elements['categories'].value = Array.isArray(data.categories) ? data.categories.join(', ') : '';
+        // tick predefined checkboxes according to categories
+        markEditCheckboxes(Array.isArray(data.categories) ? data.categories : []);
+        st.textContent = '';
+      } catch (e) {
+        console.error(e);
+        st.textContent = 'Chyba: '+e.message;
+      }
+    });
+
+    document.getElementById('form-edit').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const out = document.getElementById('edit-status');
+      out.textContent = 'Ukládám…';
+      try {
+        // sync checkboxes to input
+        reconcileCategoriesToInput('#form-edit');
+        const fd = new FormData(ev.target);
+        const res = await fetch('/api/blog/edit', { method: 'POST', body: fd });
+        if (res.status !== 204 && !res.ok) throw new Error('HTTP '+res.status);
+        out.textContent = 'Uloženo';
+        loadBlogLatest();
+      } catch (e) {
+        console.error(e);
+        out.textContent = 'Chyba: '+e.message;
+      }
+    });
+
+    // When loading for edit, mark checkboxes according to categories
+    function markEditCheckboxes(vals){
+      const set = new Set((vals||[]).map(v => v.toLowerCase()));
+      document.querySelectorAll('#form-edit .cat-predef-edit').forEach(ch => {
+        ch.checked = set.has(ch.value.toLowerCase());
+      });
+    }
+
+    document.getElementById('btn-delete').addEventListener('click', async () => {
+      const form = document.getElementById('form-edit');
+      const id = form.elements['id'].value;
+      if (!id) return;
+      if (!confirm('Opravdu smazat článek '+id+'?')) return;
+      const out = document.getElementById('edit-status');
+      out.textContent = 'Mažu…';
+      try {
+        const res = await fetch('/api/blog/delete?id='+encodeURIComponent(id), { method: 'DELETE' });
+        if (res.status !== 204 && !res.ok) throw new Error('HTTP '+res.status);
+        out.textContent = 'Smazáno';
+        document.getElementById('form-edit').reset();
+        document.getElementById('form-edit').style.display = 'none';
+        loadBlogLatest();
+      } catch (e) {
+        console.error(e);
+        out.textContent = 'Chyba: '+e.message;
+      }
+    });
+
+    // ---------- BINDINGS ----------
+    document.getElementById('btn-yt-reload').addEventListener('click', loadVideos);
+    document.getElementById('btn-yt-refresh').addEventListener('click', refreshVideos);
+    document.getElementById('btn-blog-reload').addEventListener('click', loadBlogLatest);
+
+    // On load: trigger refresh to autofill highlights if empty
+    (async () => {
+      await loadVideos();
+      // if none, trigger refresh to autofill
+      const count = document.getElementById('yt-count').textContent;
+      if (count === '0' || count === '–') {
+        await refreshVideos();
+      }
+      loadBlogLatest();
+    })();
+  </script>
+</body>
+</html>

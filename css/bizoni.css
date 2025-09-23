@@ -4823,10 +4823,6 @@
   .lte-text-page dt {
     font-weight: bold;
   }
-  .comment-text p,
-  .lte-text-page p {
-    margin-bottom: 30px;
-  }
   .comment-text p:last-child,
   .lte-text-page p:last-child {
     margin-bottom: 0;
@@ -11442,7 +11438,6 @@
     margin-top: 25px;
   }
   .blog-post p {
-    margin-bottom: 30px;
     font-size: 16px;
   }
   .blog-post > article > div > .blog-info-post-top {

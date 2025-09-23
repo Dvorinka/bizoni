@@ -2,9 +2,12 @@ services:
   app:
     build: ./backend
     container_name: bizoni-app
+    environment:
+      - STATIC_PATH=/app/site
+      - PORT=8080
     ports:
-      - "80:80"
+      - "8080:8080"
     volumes:
       - ./data:/app/data
-      - ./:/app/site:ro
+      - ./:/app/site
     restart: unless-stopped

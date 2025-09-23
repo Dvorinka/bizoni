@@ -1,0 +1,88 @@
+/* Unified Admin Sidebar Layout */
+:root{
+  --admin-sb-w: 220px;
+  --admin-sb-bg: #0f172a; /* slate-900 */
+  --admin-sb-fg: #e5e7eb; /* gray-200 */
+  --admin-sb-fg-muted: #94a3b8; /* slate-400 */
+  --admin-sb-accent: #2563eb; /* blue-600 */
+  --admin-border: #1f2937; /* gray-800 */
+}
+
+body.admin-with-sidenav {
+  padding-left: var(--admin-sb-w);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.admin-sidenav {
+  position: fixed;
+  z-index: 900; /* keep below potential dropdowns */
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--admin-sb-w);
+  background: var(--admin-sb-bg);
+  color: var(--admin-sb-fg);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--admin-border);
+}
+.admin-sidenav .brand {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 16px 14px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--admin-border);
+}
+.admin-sidenav .brand img { width: 28px; height: 28px; }
+.admin-sidenav nav { padding: 12px 8px; display:flex; flex-direction: column; gap: 6px; }
+.admin-sidenav a {
+  color: var(--admin-sb-fg);
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.admin-sidenav a:hover { background: rgba(255,255,255,0.06); }
+.admin-sidenav a.active { background: var(--admin-sb-accent); color: #fff; }
+.admin-sidenav .spacer { flex: 1 1 auto; }
+.admin-sidenav .footer { padding: 12px; color: var(--admin-sb-fg-muted); font-size: 12px; border-top: 1px solid var(--admin-border); }
+
+/* Responsive: collapse sidebar on small screens */
+@media (max-width: 900px){
+  body.admin-with-sidenav { padding-left: 0; }
+  .admin-sidenav { position: static; width: 100%; height: auto; flex-direction: row; align-items:center; }
+  .admin-sidenav .brand { border: 0; padding: 10px 12px; }
+  .admin-sidenav nav { flex-direction: row; flex-wrap: wrap; padding: 8px 8px; gap: 6px; }
+  .admin-sidenav .spacer, .admin-sidenav .footer { display:none; }
+}
+
+/* --- Admin forms: ensure editor does not overlap action buttons --- */
+/* Create and Edit pages may use Quill or textareas. Prevent overlap by elevating buttons above editors */
+#new-post button,
+#form-edit .btn,
+#form-new .btn,
+#form-load .btn {
+  position: relative;
+  z-index: 5;
+}
+
+/* Quill editor stacking context adjustments (when used in new.html edit mode) */
+.ql-container {
+  position: relative;
+  z-index: 1;
+}
+.ql-toolbar {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ensure textareas don’t create unexpected overlays */
+textarea {
+  position: relative;
+  z-index: 1;
+}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Bizoni UH</title>
+  <link rel="icon" type="image/x-icon" href="../img/logo.png" />
+  <link rel="stylesheet" href="../css/bootstrap.css" />
+  <link rel="stylesheet" href="../css/bizoni.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <style>
+    body { padding: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: #fff; }
+    .card img { width: 100%; height: 160px; object-fit: cover; }
+    .card .body { padding: 12px; }
+    .muted { color: #6b7280; font-size: 12px; }
+    header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px; }
+    .badge { background: #111827; color: #fff; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+  </style>
+</head>
+<body class="admin-with-sidenav">
+  <aside class="admin-sidenav">
+    <div class="brand"><img src="../img/logo.png" alt=""/> Bizoni UH</div>
+    <nav>
+      <a href="/admin/dashboard.html">Dashboard</a>
+      <a href="/admin/posts.html">Příspěvky</a>
+      <a href="/admin/new.html">Nový článek</a>
+      <a class="active" href="/admin/index.html">Přehled</a>
+      <a href="/" target="_blank">↗ Zpět na web</a>
+    </nav>
+    <div class="spacer"></div>
+    <div class="footer">Admin</div>
+  </aside>
+  <header>
+    <h1 style="margin:0; font-size: 20px;">Admin – Nejnovější články</h1>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <a href="/admin/dashboard.html" class="badge">Dashboard</a>
+      <a href="/admin/posts.html" class="badge">Moje příspěvky</a>
+      <a href="/admin/new.html" class="badge">Nový článek</a>
+      <a href="../index.html" class="badge">← Zpět na web</a>
+    </div>
+  </header>
+
+  <p class="muted" id="status">Načítám…</p>
+  <div class="grid" id="admin-latest"></div>
+
+  <script>
+    async function loadAdminLatest(){
+      const status = document.getElementById('status');
+      const mount = document.getElementById('admin-latest');
+      try {
+        const res = await fetch('/api/blog/latest?limit=12');
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        const items = await res.json();
+        status.textContent = `Nalezeno: ${items.length}`;
+        mount.innerHTML = '';
+        if (!Array.isArray(items) || items.length === 0) {
+          mount.innerHTML = '<div class="muted">Žádné příspěvky.</div>';
+          return;
+        }
+        const frag = document.createDocumentFragment();
+        items.forEach(it => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          const a = document.createElement('a');
+          a.href = it.link;
+          a.target = '_blank';
+          const img = document.createElement('img');
+          img.src = it.image;
+          img.alt = '';
+          a.appendChild(img);
+          const body = document.createElement('div');
+          body.className = 'body';
+          const h3 = document.createElement('div');
+          h3.style.fontWeight = '600';
+          h3.style.fontSize = '14px';
+          h3.textContent = it.title || ('Článek ' + it.id);
+          const small = document.createElement('div');
+          small.className = 'muted';
+          small.textContent = `ID: ${it.id}`;
+          body.appendChild(h3);
+          body.appendChild(small);
+          card.appendChild(a);
+          card.appendChild(body);
+          frag.appendChild(card);
+        });
+        mount.appendChild(frag);
+      } catch (e) {
+        console.error(e);
+        status.textContent = 'Chyba při načítání.';
+      }
+    }
+    loadAdminLatest();
+  </script>
+</body>
+</html>

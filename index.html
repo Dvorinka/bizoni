@@ -32,6 +32,7 @@
     <script defer src="/_vercel/speed-insights/script.js"></script>
     <link rel="stylesheet" id="bootstrap-css" href="css/bootstrap.css" type="text/css" media="all" />
     <link rel="stylesheet" id="atleticos-theme-style-css" href="css/bizoni.css" type="text/css" media="all" />
+    <link rel="stylesheet" href="css/overrides.css" type="text/css" media="all" />
     <link rel="stylesheet" id="elementor-icons-css" href="css/elementor-icons.min.css" type="text/css" media="all" />
     <link rel="stylesheet" id="elementor-frontend-css" href="css/custom-frontend.min.css" type="text/css" media="all" />
     <link rel="stylesheet" id="elementor-post-13200-css" href="css/post-13200.css" type="text/css" media="all" />
@@ -462,63 +463,14 @@
                         <div class="elementor-element elementor-element-fd6317a elementor-widget elementor-widget-lte-blog" data-id="fd6317a" data-element_type="widget" data-widget_type="lte-blog.default">
                           <div class="elementor-widget-container">
                             <div class="blog lte-blog-sc row centered layout-posts">
-                              <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-6 col-xs-12">
-                                <article class="post-25620 post type-post status-publish format-standard has-post-thumbnail hentry category-goalkeepers category-team tag-ball tag-championship tag-coach tag-football tag-goalkeepers tag-team tag-training">
-                                  <a href="blog/0030.html" class="lte-photo">
-                                    <img fetchpriority="high" decoding="async" width="500" height="300" src="./img/blog/0030.png" class="attachment-atleticos-blog size-atleticos-blog wp-post-image" />
-                                    <span class="lte-photo-overlay"></span>
-                                  </a>
-                                  <div class="lte-description">
-                                    <a href="blog/0030.html" class="lte-header">
-                                      <h3>JDEME DO FINÁLE!</h3>
-                                    </a>
-                                    <!-- <div class="lte-excerpt">Popis článku</div> -->
-                                  </div>
-                                </article>
+                              <div id="latest-blog-items" class="row" aria-live="polite">
+                                <!-- Dynamically rendered by js/blog-latest.js -->
                               </div>
-                              <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-6 col-xs-12">
-                                <article class="post-25620 post type-post status-publish format-standard has-post-thumbnail hentry category-goalkeepers category-team tag-ball tag-championship tag-coach tag-football tag-goalkeepers tag-team tag-training">
-                                  <a href="blog/0029.html" class="lte-photo">
-                                    <img fetchpriority="high" decoding="async" width="500" height="300" src="./img/blog/0029.png" class="attachment-atleticos-blog size-atleticos-blog wp-post-image" />
-                                    <span class="lte-photo-overlay"></span>
-                                  </a>
-                                  <div class="lte-description">
-                                    <a href="blog/0029.html" class="lte-header">
-                                      <h3>18. Zápas final score</h3>
-                                    </a>
-                                    <!-- <div class="lte-excerpt">Popis článku</div> -->
-                                  </div>
-                                </article>
+                            </div>
+                            <div class="blog lte-blog-sc row centered layout-posts" style="margin-top: 12px;">
+                              <div id="other-blog-items" class="row" aria-live="polite">
+                                <!-- Dynamically rendered by js/blog-latest.js (other recent posts) -->
                               </div>
-                              <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-6 col-xs-12">
-                                <article class="post-25620 post type-post status-publish format-standard has-post-thumbnail hentry category-goalkeepers category-team tag-ball tag-championship tag-coach tag-football tag-goalkeepers tag-team tag-training">
-                                  <a href="blog/0028.html" class="lte-photo">
-                                    <img fetchpriority="high" decoding="async" width="500" height="300" src="./img/blog/0028.png" class="attachment-atleticos-blog size-atleticos-blog wp-post-image" />
-                                    <span class="lte-photo-overlay"></span>
-                                  </a>
-                                  <div class="lte-description">
-                                    <a href="blog/0028.html" class="lte-header">
-                                      <h3>16. Zápas final score</h3>
-                                    </a>
-                                    <!-- <div class="lte-excerpt">Popis článku</div> -->
-                                  </div>
-                                </article>
-                              </div>
-                              <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-6 col-xs-12">
-                                <article class="post-25620 post type-post status-publish format-standard has-post-thumbnail hentry category-goalkeepers category-team tag-ball tag-championship tag-coach tag-football tag-goalkeepers tag-team tag-training">
-                                  <a href="blog/0027.html" class="lte-photo">
-                                    <img fetchpriority="high" decoding="async" width="500" height="300" src="./img/blog/0027.png" class="attachment-atleticos-blog size-atleticos-blog wp-post-image" />
-                                    <span class="lte-photo-overlay"></span>
-                                  </a>
-                                  <div class="lte-description">
-                                    <a href="blog/0027.html" class="lte-header">
-                                      <h3>Postup do 2.Ligy</h3>
-                                    </a>
-                                    <!-- <div class="lte-excerpt">Popis článku</div> -->
-                                  </div>
-                                </article>
-                              </div>
-                              
                             </div>
                             <div class="clearfix"></div>
                           </div>
@@ -603,29 +555,8 @@
                             <div class="elementor-element elementor-element-235d047 elementor-widget elementor-widget-lte-blog" data-id="235d047" data-element_type="widget" data-widget_type="lte-blog.default">
                               <div class="elementor-widget-container">
                                 <div class="blog lte-blog-sc row centered layout-posts-large hideLastOdd lte-grid-bg">
-                                  <div class="items col-xl-12 col-lg-12 col-md-12 col-sm-12 col-ms-12 col-xs-12">
-                                    <article class="post-36226 post type-post status-publish format-video has-post-thumbnail hentry category-training post_format-post-format-video">
-                                      <div class="lte-wrapper">
-                                        <a href="https://www.youtube.com/watch?v=pSGwSJvdd14" target="_blank" class="lte-photo lte-video-popup swipebox">
-                                          <img loading="lazy" decoding="async" width="1600" height="969" src="img/videa/zapas10.jpg" class="attachment-full size-full wp-post-image" />
-                                          <span class="lte-icon-video">
-                                            <ion-icon name="play-circle-outline" size="large"></ion-icon>
-                                            <span>5:58</span>
-                                          </span>
-                                        </a>
-                                      </div>
-                                      <div class="lte-description">
-                                        <span class="lte-date-top">
-                                          <a href="" class="lte-date">
-                                            <span class="dt">28. 5. 2025</span>
-                                          </a>
-                                        </span>
-                                        <a href="https://www.youtube.com/watch?v=pSGwSJvdd14" class="lte-header">
-                                          <h3>Bizoni UH vs Žabinští Vlci Brno 6:4</h3>
-                                        </a>
-                                        <div class="lte-excerpt"></div>
-                                      </div>
-                                    </article>
+                                  <div id="latest-video-feature" class="items col-xl-12 col-lg-12 col-md-12 col-sm-12 col-ms-12 col-xs-12" aria-live="polite">
+                                    <!-- Filled dynamically by js/videos-latest.js (featured video) -->
                                   </div>
                                 </div>
                                 <div class="clearfix"></div>
@@ -636,99 +567,8 @@
                             <div class="elementor-element elementor-element-4e482fb elementor-widget elementor-widget-lte-blog" data-id="4e482fb" data-element_type="widget" data-widget_type="lte-blog.default">
                               <div class="elementor-widget-container">
                                 <div class="blog lte-blog-sc row centered layout-posts lte-grid-bg">
-                                  <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-12 col-xs-12">
-                                    <article class="post-36227 post type-post status-publish format-video has-post-thumbnail hentry category-training post_format-post-format-video">
-                                      <div class="lte-wrapper">
-                                        <a href="https://youtu.be/6TE21O06TZA" target="_blank" class="lte-photo lte-video-popup swipebox">
-                                          <img loading="lazy" decoding="async" width="1600" height="969" src="./img/videa/zapas7.jpg" class="attachment-full size-full wp-post-image" />
-                                          <span class="lte-icon-video">
-                                            <ion-icon name="play-circle-outline" size="large"></ion-icon>
-                                            <span>3:27</span>
-                                          </span>
-                                        </a>
-                                      </div>
-                                      <div class="lte-description">
-                                        <span class="lte-date-top">
-                                          <a href="" class="lte-date">
-                                            <span class="dt">25. 2. 2025</span>
-                                          </a>
-                                        </span>
-                                        <a href="" class="lte-header">
-                                          <h3>FC Bizoni UH 11-3 Amor Kloboučky Vyškov B | HIGHLIGHTS</h3>
-                                        </a>
-                                        <div class="lte-excerpt"></div>
-                                      </div>
-                                    </article>
-                                  </div>
-                                  <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-12 col-xs-12">
-                                    <article class="post-36228 post type-post status-publish format-video has-post-thumbnail hentry category-training post_format-post-format-video">
-                                      <div class="lte-wrapper">
-                                        <a href="https://youtu.be/LTEZcrev6xI" target="_blank" class="lte-photo lte-video-popup swipebox">
-                                          <img loading="lazy" decoding="async" width="1600" height="969" src="./img/videa/zapas6.jpg" class="attachment-full size-full wp-post-image" />
-                                          <span class="lte-icon-video">
-                                            <ion-icon name="play-circle-outline" size="large"></ion-icon>
-                                            <span>2:34</span>
-                                          </span>
-                                        </a>
-                                      </div>
-                                      <div class="lte-description">
-                                        <span class="lte-date-top">
-                                          <a href="" class="lte-date">
-                                            <span class="dt">3. 2. 2025</span>
-                                          </a>
-                                        </span>
-                                        <a href="" class="lte-header">
-                                          <h3>FC Bizoni UH 10-0 FFT Vinohrady Brno | HIGHLIGHTS</h3>
-                                        </a>
-                                        <div class="lte-excerpt"></div>
-                                      </div>
-                                    </article>
-                                  </div>
-                                  <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-12 col-xs-12">
-                                    <article class="post-36225 post type-post status-publish format-video has-post-thumbnail hentry category-training post_format-post-format-video">
-                                      <div class="lte-wrapper">
-                                        <a href="https://youtu.be/V91k9Dirvkg" class="lte-photo lte-video-popup swipebox">
-                                          <img loading="lazy" decoding="async" width="1600" height="969" src="./img/videa/zapas2.jpg" class="attachment-full size-full wp-post-image" />
-                                          <span class="lte-icon-video">
-                                            <ion-icon name="play-circle-outline" size="large"></ion-icon>
-                                            <span>4:12</span>
-                                          </span>
-                                        </a>
-                                      </div>
-                                      <div class="lte-description">
-                                        <span class="lte-date-top">
-                                          <a href="" class="lte-date">
-                                            <span class="dt">14. 1. 2025</span>
-                                          </a>
-                                        </span>
-                                        <a href="" class="lte-header">
-                                          <h3>FC Bizoni UH 19-2 FC Kozlany-Bohdalice | HIGHLIGHTS</h3>
-                                        </a>
-                                      </div>
-                                    </article>
-                                  </div>
-                                  <div class="items col-xl-6 col-lg-6 col-md-6 col-sm-6 col-ms-12 col-xs-12">
-                                    <article class="post-36226 post type-post status-publish format-video has-post-thumbnail hentry category-training post_format-post-format-video">
-                                      <div class="lte-wrapper">
-                                        <a href="https://youtu.be/FWLttVdzfsQ" class="lte-photo lte-video-popup swipebox">
-                                          <img loading="lazy" decoding="async" width="1600" height="969" src="./img/videa/zapas1.jpg" class="attachment-full size-full wp-post-image" />
-                                          <span class="lte-icon-video">
-                                            <ion-icon name="play-circle-outline" size="large"></ion-icon>
-                                            <span>6:50</span>
-                                          </span>
-                                        </a>
-                                      </div>
-                                      <div class="lte-description">
-                                        <span class="lte-date-top">
-                                          <a href="" class="lte-date">
-                                            <span class="dt">7. 12. 2024</span>
-                                          </a>
-                                        </span>
-                                        <a href="" class="lte-header">
-                                          <h3>FC Bizoni UH 13-3 TJ Agrotec Hustopeče | HIGHLIGHTS</h3>
-                                        </a>
-                                      </div>
-                                    </article>
+                                  <div id="latest-videos-grid" class="row" aria-live="polite">
+                                    <!-- Filled dynamically by js/videos-latest.js (remaining videos) -->
                                   </div>
                                 </div>
                                 <div class="clearfix"></div>
@@ -739,6 +579,53 @@
                       </div>
                     </div>
                   </div>
+                 
+                 <!-- Social Embeds: Follow Us -->
+                 <div id="social" class="elementor-element e-flex e-con-boxed e-con e-parent" data-element_type="container" aria-labelledby="social-heading">
+                   <div class="e-con-inner">
+                     <div class="elementor-element lte-heading-align-center lte-heading-style-default elementor-widget elementor-widget-lte-header" data-element_type="widget">
+                       <div class="elementor-widget-container">
+                         <div class="lte-heading lte-style-default lte-uppercase heading-tag-h3">
+                           <div class="lte-heading-content">
+                             <h3 id="social-heading" class="lte-header">Sledujte nás</h3>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
+                     <div class="row centered" style="margin-top: 20px;">
+                       <!-- Facebook Page Embed -->
+                       <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12">
+                         <div id="fb-root"></div>
+                         <div class="fb-page"
+                              data-href="https://www.facebook.com/bizoniuh"
+                              data-height="500"
+                              data-small-header="false"
+                              data-adapt-container-width="true"
+                              data-hide-cover="false"
+                              data-show-facepile="true"
+                              data-tabs="timeline"
+                              data-width="600">
+                           <blockquote cite="https://www.facebook.com/bizoniuh" class="fb-xfbml-parse-ignore">
+                             <a href="https://www.facebook.com/bizoniuh">FC Bizoni Uherské Hradiště</a>
+                           </blockquote>
+                         </div>
+                       </div>
+                       
+                       <!-- Instagram Embed -->
+                       <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-xs-12">
+                         <div class="igwrapper">
+                           <style>
+                             .igwrapper{background:#fff;position:relative}
+                             .igwrapper iframe{border:0;position:relative;z-index:2}
+                           </style>
+                           <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/fcbizoni_uh" data-instgrm-version="14" style="background:#FFF;border:0;border-radius:3px;box-shadow:0 0 1px 0 rgba(0,0,0,0.5),0 1px 10px 0 rgba(0,0,0,0.15);margin:1px;max-width:658px;min-width:326px;padding:0;width:99.375%;width:-webkit-calc(100% - 2px);width:calc(100% - 2px);"></blockquote>
+                         </div>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v23.0"></script>
+                 <script async src="https://www.instagram.com/embed.js"></script>
                   <div id="tym" class="elementor-element elementor-element-ed06b06 e-con-full e-flex e-con e-parent" data-id="ed06b06" data-element_type="container" data-core-v316-plus="true">
                     <div class="elementor-element elementor-element-22c4d8c lte-heading-style-header-subheader lte-heading-align-center lte-watermark-offset-1 elementor-widget elementor-widget-lte-header" data-id="22c4d8c" data-element_type="widget" data-widget_type="lte-header.default">
                       <div class="elementor-widget-container">
@@ -1977,53 +1864,53 @@
           </div>
         </div>
       </div>
-    </div>
-    <div class="lte-footer-wrapper lte-footer-layout-default">
-      <div class="footer-wrapper">
-        <div class="lte-container">
-          <div class="footer-block lte-footer-widget-area">
-            <div data-elementor-type="wp-post" data-elementor-id="29393" class="elementor elementor-29393">
-              <div class="elementor-element elementor-element-a939976 lte-background-black e-flex e-con-boxed e-con e-parent" data-id="a939976" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}" data-core-v316-plus="true">
-                <div class="e-con-inner" style="padding-bottom: 92px;">
-                  <div class="elementor-element elementor-element-f2b730e e-con-full e-flex e-con e-child" data-id="f2b730e" data-element_type="container">
-                    <div class="elementor-element elementor-element-81a7a24 elementor-widget__width-initial elementor-widget elementor-widget-shortcode" data-id="81a7a24" data-element_type="widget" data-widget_type="shortcode.default">
-                      <div class="elementor-widget-container">
-                        <div class="elementor-shortcode">
-                          <a class="lte-logo" href="index.html">
-                            <img src="img/logo.png" style="filter: drop-shadow(9px -1px 23px black);">
-                          </a>
+      <div class="lte-footer-wrapper lte-footer-layout-default">
+        <div class="footer-wrapper">
+          <div class="lte-container">
+            <div class="footer-block lte-footer-widget-area">
+              <div data-elementor-type="wp-post" data-elementor-id="29393" class="elementor elementor-29393">
+                <div class="elementor-element elementor-element-a939976 lte-background-black e-flex e-con-boxed e-con e-parent" data-id="a939976" data-element_type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}" data-core-v316-plus="true">
+                  <div class="e-con-inner" style="padding-bottom: 92px;">
+                    <div class="elementor-element elementor-element-f2b730e e-con-full e-flex e-con e-child" data-id="f2b730e" data-element_type="container">
+                      <div class="elementor-element elementor-element-81a7a24 elementor-widget__width-initial elementor-widget elementor-widget-shortcode" data-id="81a7a24" data-element_type="widget" data-widget_type="shortcode.default">
+                        <div class="elementor-widget-container">
+                          <div class="elementor-shortcode">
+                            <a class="lte-logo" href="index.html">
+                              <img src="img/logo.png" style="filter: drop-shadow(9px -1px 23px black);">
+                            </a>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div class="elementor-element elementor-element-86345d3 elementor-widget__width-initial elementor-widget elementor-widget-text-editor" data-id="86345d3" data-element_type="widget" data-widget_type="text-editor.default">
-                      <div class="elementor-widget-container">
-                        <p>
-                          <span class="text-sm">
-                            <a href="https://maps.app.goo.gl/kEc9CJuXTxqNUhgj8" target="_blank">Stonky 559, 686 01 Uherské Hradiště 1</a>
-                            <br>fcbizoni@gmail.com </span>
-                        </p>
+                      <div class="elementor-element elementor-element-86345d3 elementor-widget__width-initial elementor-widget elementor-widget-text-editor" data-id="86345d3" data-element_type="widget" data-widget_type="text-editor.default">
+                        <div class="elementor-widget-container">
+                          <p>
+                            <span class="text-sm">
+                              <a href="https://maps.app.goo.gl/kEc9CJuXTxqNUhgj8" target="_blank">Stonky 559, 686 01 Uherské Hradiště 1</a>
+                              <br>fcbizoni@gmail.com </span>
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                    <div class="elementor-element elementor-element-475baf0 elementor-widget elementor-widget-lte-elements" data-id="475baf0" data-element_type="widget" data-widget_type="lte-elements.default">
-                      <div class="elementor-widget-container">
-                        <div class="lte-social lte-nav-second lte-type-">
-                          <ul>
-                            <li>
-                              <a href="https://www.facebook.com/bizoniuh" target="_blank">
-                                <ion-icon name="logo-facebook" style="height: 22px; width: 22px;"></ion-icon>
-                              </a>
-                            </li>
-                            <li>
-                              <a href="https://www.instagram.com/fcbizoni_uh/" target="_blank">
-                                <ion-icon name="logo-instagram" style="height: 22px; width: 22px;"></ion-icon>
-                              </a>
-                            </li>
-                            <li>
-                              <a href="https://www.youtube.com/@FCBizoniUH" target="_blank">
-                                <ion-icon name="logo-youtube" style="height: 22px; width: 22px;"></ion-icon>
-                              </a>
-                            </li>
-                          </ul>
+                      <div class="elementor-element elementor-element-475baf0 elementor-widget elementor-widget-lte-elements" data-id="475baf0" data-element_type="widget" data-widget_type="lte-elements.default">
+                        <div class="elementor-widget-container">
+                          <div class="lte-social lte-nav-second lte-type-">
+                            <ul>
+                              <li>
+                                <a href="https://www.facebook.com/bizoniuh" target="_blank">
+                                  <ion-icon name="logo-facebook" style="height: 22px; width: 22px;"></ion-icon>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="https://www.instagram.com/fcbizoni_uh/" target="_blank">
+                                  <ion-icon name="logo-instagram" style="height: 22px; width: 22px;"></ion-icon>
+                                </a>
+                              </li>
+                              <li>
+                                <a href="https://www.youtube.com/@FCBizoniUH" target="_blank">
+                                  <ion-icon name="logo-youtube" style="height: 22px; width: 22px;"></ion-icon>
+                                </a>
+                              </li>
+                            </ul>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2037,7 +1924,7 @@
       <footer class="copyright-block copyright-layout-copyright-transparent">
         <div class="container">
           <p>
-            <a href="https://tdvorak.dev" target="_blank">TDvorak</a> © Všechna práva vyhrazena - 2025
+            <a href="https://tdvorak.dev" target="_blank">TDvorak</a> &copy; Všechna práva vyhrazena - 2025
           </p>
         </div>
       </footer>
@@ -2049,7 +1936,6 @@
       <span class="go-top-header">Nahoru</span>
     </a>
     <link rel='stylesheet' id='elementor-post-36123-css' href='css/post-36123.css' type='text/css' media='all' />
-    <link rel='stylesheet' id='elementor-post-36124-css' href='css/post-36124.css' type='text/css' media='all' />
     <link rel='stylesheet' id='elementor-post-35532-css' href='css/post-35532.css' type='text/css' media='all' />
     <link rel='stylesheet' id='elementor-post-36129-css' href='css/post-36129.css' type='text/css' media='all' />
     <link rel='stylesheet' id='elementor-post-36131-css' href='css/post-36131.css' type='text/css' media='all' />
@@ -2225,5 +2111,10 @@
     </script>
     <script src="js/facr-frontend.js"></script>
     <script src="js/team-switcher.js"></script>
+    <!-- Auto-fill latest blog sections and slideshow from backend API -->
+    <script src="js/blog-latest.js"></script>
+    <script src="js/home-autofill.js"></script>
+    <!-- Load and render latest YouTube videos -->
+    <script src="js/videos-latest.js"></script>
   </body>
 </html>

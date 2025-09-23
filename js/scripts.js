@@ -2,13 +2,15 @@
 
 jQuery( function() {
 
-	initEvents();
+    initEvents();
 
-	initStyles();
-	initCollapseMenu();	
-	checkCountUp();	
-	initScrollReveal();
-	checkScrollAnimation();
+    initStyles();
+    sanitizeBlogContent();
+    cleanupDuplicateBlocks();
+    initCollapseMenu(); 
+    checkCountUp(); 
+    initScrollReveal();
+    checkScrollAnimation();
 });
 
 jQuery(window).on('scroll', function (event) {
@@ -71,6 +73,23 @@ function initCollapseMenu() {
 
 		    	return false;
 		    }
+
+// Remove duplicate footers and duplicate blog grids (defensive cleanup)
+function cleanupDuplicateBlocks(){
+  try {
+    // Keep only the first footer wrapper
+    var footers = document.querySelectorAll('.lte-footer-wrapper');
+    for (var i = 1; i < footers.length; i++) {
+      footers[i].remove();
+    }
+    // Keep only the first blog grid inside main blog wrap
+    var grids = document.querySelectorAll('.lte-blog-wrap .blog.blog-block');
+    for (var j = 1; j < grids.length; j++) {
+      grids[j].remove();
+    }
+  } catch(e) { /* no-op */ }
+}
+
 	    }
     });
 
@@ -84,6 +103,52 @@ function initCollapseMenu() {
 
        	lastWidth = winWidth;
     });	
+}
+
+// Remove empty/garbage paragraphs from blog content and normalize spacing
+function sanitizeBlogContent(){
+  try {
+    var blocks = document.querySelectorAll('.text.lte-text-page.clearfix');
+    blocks.forEach(function(block){
+      // remove <p> that are empty or contain only <br> or whitespace
+      Array.from(block.querySelectorAll('p')).forEach(function(p){
+        var html = p.innerHTML.trim();
+        var text = p.textContent.replace(/\u00A0/g,' ').trim();
+        if (!text || /^<br\s*\/?>(\s|&nbsp;)*$/i.test(html)) {
+          p.remove();
+          return;
+        }
+        // remove hashtag-only paragraphs (e.g., #tag #tag2)
+        var anchors = Array.from(p.querySelectorAll('a'));
+        var allHashLinks = anchors.length > 0 && anchors.every(function(a){
+          var t = (a.textContent||'').trim();
+          return t.startsWith('#');
+        });
+        var pureHashText = /^#\S+(?:\s+#\S+)*$/.test(text);
+        if (allHashLinks || pureHashText) {
+          p.remove();
+          return;
+        }
+        // strip excessive bottom margins coming from pasted content
+        p.style.marginBottom = '';
+        p.style.marginTop = '';
+      });
+      // collapse consecutive <p> duplicates with same text
+      var prevText = null;
+      Array.from(block.querySelectorAll('p')).forEach(function(p){
+        var t = p.textContent.trim();
+        if (prevText !== null && t === prevText) {
+          p.remove();
+        } else {
+          prevText = t;
+        }
+      });
+    });
+    // Remove tags/sharing/related containers if still present in DOM
+    document.querySelectorAll('.blog-info-post-bottom, .tags-line, .lte-sharing, .lte-related').forEach(function(el){
+      el.remove();
+    });
+  } catch(e) { /* no-op */ }
 }
 
 /* Navbar attributes with dependency on resolution and scroll status */
