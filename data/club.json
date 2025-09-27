@@ -1,5 +1,5 @@
 {
-  "fetched_at": "2025-09-23T18:13:27.868167431Z",
+  "fetched_at": "2025-09-25T19:49:04.743820095Z",
   "club_detail": {
     "name": "FC Bizoni Uherské Hradiště, z.s.",
     "club_id": "441d3783-06aa-436a-b438-359300ee0371",
@@ -837,6 +837,183 @@
             "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/abcf9cbc-b8a4-4e93-aee6-2c68107365d6"
           }
         ]
+      },
+      {
+        "id": "fe867f19-15f7-41bb-b58d-dfc2a56f18eb",
+        "code": "U1A",
+        "name": "2. Liga Ženy - Východ",
+        "team_count": "7",
+        "matches_link": "https://www.fotbal.cz/futsal/futsal/table/fe867f19-15f7-41bb-b58d-dfc2a56f18eb",
+        "matches": [
+          {
+            "date_time": "15.11.2025 09:00",
+            "home": "FC Bizoni Uherské Hradiště",
+            "home_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "home_logo_url": "/img/logo.png",
+            "away": "Real Top Frýdek-Místek",
+            "away_id": "",
+            "away_logo_url": "https://is1.fotbal.cz/media/kluby/15cfc7c4-36b2-413e-a047-7e509c4e0d0e/15cfc7c4-36b2-413e-a047-7e509c4e0d0e_crop.jpg",
+            "score": "0:0",
+            "venue": "SH Uherské Hradiště",
+            "match_id": "d177f982-b9ba-4a40-8103-51b8d726b47e",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=d177f982-b9ba-4a40-8103-51b8d726b47e\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/d177f982-b9ba-4a40-8103-51b8d726b47e"
+          },
+          {
+            "date_time": "15.11.2025 09:00",
+            "home": "FC Bizoni Uherské Hradiště",
+            "home_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "home_logo_url": "/img/logo.png",
+            "away": "Uherský Brod",
+            "away_id": "",
+            "away_logo_url": "https://is1.fotbal.cz/media/kluby/d01a3dae-20cb-4d1c-9e7f-f26bbaf1822a/d01a3dae-20cb-4d1c-9e7f-f26bbaf1822a_crop.jpg",
+            "score": "0:0",
+            "venue": "SH Uherské Hradiště",
+            "match_id": "2091e206-1e33-4343-95c6-55948f584cc3",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=2091e206-1e33-4343-95c6-55948f584cc3\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/2091e206-1e33-4343-95c6-55948f584cc3"
+          },
+          {
+            "date_time": "15.11.2025 09:00",
+            "home": "Rakovec Kotvrdovice",
+            "home_id": "",
+            "home_logo_url": "https://is1.fotbal.cz/media/kluby/7dd88c66-16cd-44e8-801a-eca5bc5a2ced/7dd88c66-16cd-44e8-801a-eca5bc5a2ced_crop.jpg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Uherské Hradiště",
+            "match_id": "8dedefdb-eebb-47b7-8a9f-4e5119add725",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=8dedefdb-eebb-47b7-8a9f-4e5119add725\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/8dedefdb-eebb-47b7-8a9f-4e5119add725"
+          },
+          {
+            "date_time": "30.11.2025 09:00",
+            "home": "Futsalová škola Třebíč",
+            "home_id": "",
+            "home_logo_url": "/dist/img/logo-club-empty.svg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Spartak Třebíč",
+            "match_id": "d11b7591-d94e-4004-8b29-6690050e035a",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=d11b7591-d94e-4004-8b29-6690050e035a\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/d11b7591-d94e-4004-8b29-6690050e035a"
+          },
+          {
+            "date_time": "30.11.2025 09:00",
+            "home": "FC Bizoni Uherské Hradiště",
+            "home_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "home_logo_url": "/img/logo.png",
+            "away": "FK Nové Sady Olomouc",
+            "away_id": "",
+            "away_logo_url": "/dist/img/logo-club-empty.svg",
+            "score": "0:0",
+            "venue": "SH Uherské Hradiště",
+            "match_id": "45ab18e5-4bf5-43dd-a60a-369e8fad49ba",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=45ab18e5-4bf5-43dd-a60a-369e8fad49ba\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/45ab18e5-4bf5-43dd-a60a-369e8fad49ba"
+          },
+          {
+            "date_time": "10.01.2026 09:00",
+            "home": "FC Bizoni Uherské Hradiště",
+            "home_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "home_logo_url": "/img/logo.png",
+            "away": "Real Top Frýdek-Místek",
+            "away_id": "",
+            "away_logo_url": "https://is1.fotbal.cz/media/kluby/15cfc7c4-36b2-413e-a047-7e509c4e0d0e/15cfc7c4-36b2-413e-a047-7e509c4e0d0e_crop.jpg",
+            "score": "0:0",
+            "venue": "SH Uherské Hradiště",
+            "match_id": "a9fc849c-d2b7-4735-b078-faf6b366336f",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=a9fc849c-d2b7-4735-b078-faf6b366336f\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/a9fc849c-d2b7-4735-b078-faf6b366336f"
+          },
+          {
+            "date_time": "10.01.2026 09:00",
+            "home": "Futsal Club Šumperk",
+            "home_id": "",
+            "home_logo_url": "/dist/img/logo-club-empty.svg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Postřelmov",
+            "match_id": "cc0df440-888b-4740-b13c-132db46339b3",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=cc0df440-888b-4740-b13c-132db46339b3\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/cc0df440-888b-4740-b13c-132db46339b3"
+          },
+          {
+            "date_time": "10.01.2026 09:00",
+            "home": "Uherský Brod",
+            "home_id": "",
+            "home_logo_url": "https://is1.fotbal.cz/media/kluby/d01a3dae-20cb-4d1c-9e7f-f26bbaf1822a/d01a3dae-20cb-4d1c-9e7f-f26bbaf1822a_crop.jpg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Uherský Brod",
+            "match_id": "499d00b2-07a5-46ad-8229-ddea508183a5",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=499d00b2-07a5-46ad-8229-ddea508183a5\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/499d00b2-07a5-46ad-8229-ddea508183a5"
+          },
+          {
+            "date_time": "25.01.2026 09:00",
+            "home": "Futsalová škola Třebíč",
+            "home_id": "",
+            "home_logo_url": "/dist/img/logo-club-empty.svg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Spartak Třebíč",
+            "match_id": "ffc5dc91-ee41-43f8-8c58-4e4f2c1888d8",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=ffc5dc91-ee41-43f8-8c58-4e4f2c1888d8\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/ffc5dc91-ee41-43f8-8c58-4e4f2c1888d8"
+          },
+          {
+            "date_time": "25.01.2026 09:00",
+            "home": "Rakovec Kotvrdovice",
+            "home_id": "",
+            "home_logo_url": "https://is1.fotbal.cz/media/kluby/7dd88c66-16cd-44e8-801a-eca5bc5a2ced/7dd88c66-16cd-44e8-801a-eca5bc5a2ced_crop.jpg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Jedovnice",
+            "match_id": "73b05917-2fe7-4122-9bc1-a068c871e751",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=73b05917-2fe7-4122-9bc1-a068c871e751\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/73b05917-2fe7-4122-9bc1-a068c871e751"
+          },
+          {
+            "date_time": "08.02.2026 00:00",
+            "home": "FC Bizoni Uherské Hradiště",
+            "home_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "home_logo_url": "/img/logo.png",
+            "away": "FK Nové Sady Olomouc",
+            "away_id": "",
+            "away_logo_url": "/dist/img/logo-club-empty.svg",
+            "score": "0:0",
+            "venue": "SH Uherské Hradiště",
+            "match_id": "acb90b6f-8178-4999-bf96-01c975327149",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=acb90b6f-8178-4999-bf96-01c975327149\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/acb90b6f-8178-4999-bf96-01c975327149"
+          },
+          {
+            "date_time": "08.02.2026 00:00",
+            "home": "Futsal Club Šumperk",
+            "home_id": "",
+            "home_logo_url": "/dist/img/logo-club-empty.svg",
+            "away": "FC Bizoni Uherské Hradiště",
+            "away_id": "441d3783-06aa-436a-b438-359300ee0371",
+            "away_logo_url": "/img/logo.png",
+            "score": "0:0",
+            "venue": "SH Postřelmov",
+            "match_id": "85a3256e-9827-4bb4-8ad6-dda7b08522c7",
+            "report_url": "https://is.fotbal.cz/public/zapasy/zapis-o-utkani-report.aspx%3Fzapas=85a3256e-9827-4bb4-8ad6-dda7b08522c7\u0026zapis=1\u0026noprint=1\u0026btnprint=1\u0026.htm",
+            "facr_link": "https://www.fotbal.cz/futsal/zapasy/futsal/85a3256e-9827-4bb4-8ad6-dda7b08522c7"
+          }
+        ]
       }
     ]
   },
@@ -1159,6 +1336,16 @@
         "name": "Dorostenecká liga futsalu Východ",
         "team_count": "10",
         "matches_link": "https://www.fotbal.cz/futsal/futsal/table/940fcb8c-7f68-4ed5-9806-9617d9185c63",
+        "table": {
+          "overall": null
+        }
+      },
+      {
+        "id": "fe867f19-15f7-41bb-b58d-dfc2a56f18eb",
+        "code": "U1A",
+        "name": "2. Liga Ženy - Východ",
+        "team_count": "7",
+        "matches_link": "https://www.fotbal.cz/futsal/futsal/table/fe867f19-15f7-41bb-b58d-dfc2a56f18eb",
         "table": {
           "overall": null
         }

@@ -146,9 +146,16 @@
         .filter(x=> x.dt && x.dt >= windowStart)
         .sort((a,b)=> a.dt - b.dt);
       if(candidates.length === 0) continue;
-      // pick next upcoming if available; otherwise latest recent within window
-      let pick = candidates.find(x=> x.dt >= now);
-      if(!pick) pick = candidates[candidates.length - 1];
+      // Prefer the latest recently finished match within the 3-day window;
+      // if none, then choose the next upcoming; if none, fall back to the latest overall in window
+      let pick = null;
+      // find latest finished (dt < now) within window
+      for(let i = candidates.length - 1; i >= 0; i--){
+        if(candidates[i].dt < now){ pick = candidates[i]; break; }
+      }
+      if(!pick){
+        pick = candidates.find(x=> x.dt >= now) || candidates[candidates.length - 1];
+      }
       list.push(pick);
     }
     // sort resulting per-competition picks by time ascending for navigation
