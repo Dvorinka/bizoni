@@ -13,6 +13,50 @@
     return 'https://www.youtube.com/watch?v=' + videoId;
   }
 
+  // Convert common English relative time strings to Czech
+  function enRelativeToCz(s) {
+    if (!s || typeof s !== 'string') return s;
+    const t = s.trim().toLowerCase();
+    if (t === 'just now') return 'právě teď';
+    // minutes
+    let m = t.match(/^(\d+)\s+minute(s)?\s+ago$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n === 1 ? 'před 1 minutou' : `před ${n} minutami`;
+    }
+    // hours
+    m = t.match(/^(\d+)\s+hour(s)?\s+ago$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n === 1 ? 'před 1 hodinou' : `před ${n} hodinami`;
+    }
+    // days
+    m = t.match(/^(\d+)\s+day(s)?\s+ago$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n === 1 ? 'před 1 dnem' : `před ${n} dny`;
+    }
+    // weeks
+    m = t.match(/^(\d+)\s+week(s)?\s+ago$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n === 1 ? 'před 1 týdnem' : `před ${n} týdny`;
+    }
+    // months
+    m = t.match(/^(\d+)\s+month(s)?\s+ago$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n === 1 ? 'před 1 měsícem' : `před ${n} měsíci`;
+    }
+    // years
+    m = t.match(/^(\d+)\s+year(s)?\s+ago$/);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      return n === 1 ? 'před 1 rokem' : `před ${n} lety`;
+    }
+    return s; // fallback unchanged
+  }
+
   function renderFeatured(v) {
     const article = h('article', {class: 'post format-video has-post-thumbnail hentry'});
     const wrap = h('div', {class: 'lte-wrapper'});
@@ -27,7 +71,8 @@
     const descr = h('div', {class: 'lte-description'});
     const dateTop = h('span', {class: 'lte-date-top'});
     const dateA = h('a', {href: '', class: 'lte-date'});
-    dateA.appendChild(h('span', {class: 'dt', html: v.published_text || v.published_date || ''}));
+    const relText = enRelativeToCz(v.published_text || '') || v.published_date || '';
+    dateA.appendChild(h('span', {class: 'dt', html: relText}));
     dateTop.appendChild(dateA);
     const headerA = h('a', {href: ytUrl(v.video_id), class: 'lte-header', target: '_blank'});
     headerA.appendChild(h('h3', {html: v.title || ''}));
@@ -55,7 +100,8 @@
     const descr = h('div', {class: 'lte-description'});
     const dateTop = h('span', {class: 'lte-date-top'});
     const dateA = h('a', {href: '', class: 'lte-date'});
-    dateA.appendChild(h('span', {class: 'dt', html: v.published_text || v.published_date || ''}));
+    const relText2 = enRelativeToCz(v.published_text || '') || v.published_date || '';
+    dateA.appendChild(h('span', {class: 'dt', html: relText2}));
     dateTop.appendChild(dateA);
     const headerA = h('a', {href: ytUrl(v.video_id), class: 'lte-header', target: '_blank'});
     headerA.appendChild(h('h3', {html: v.title || ''}));

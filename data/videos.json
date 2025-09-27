@@ -1,15 +1,25 @@
 {
-  "fetched_at": "2025-09-23T18:07:39.356328212Z",
+  "fetched_at": "2025-09-27T15:19:20.398328338Z",
   "channel": "@FCBizoniUH",
   "items": [
+    {
+      "video_id": "h_-TS6oVvKA",
+      "title": "Bizoni UH-RT F.Místek 5:5/1:3/-2.kolo 2.liga UH 26.9.25",
+      "length": "",
+      "thumbnail_url": "https://img.youtube.com/vi/h_-TS6oVvKA/maxresdefault.jpg",
+      "views_text": "41 views",
+      "views": 41,
+      "published_text": "9 hours ago",
+      "published_date": "2025-09-27"
+    },
     {
       "video_id": "ozH8xE7V458",
       "title": "Bizoni UH-Tango Hodonín 7:4/2:3/-regionální finále poháru SFČR-16.9.25-UH",
       "length": "",
       "thumbnail_url": "https://img.youtube.com/vi/ozH8xE7V458/maxresdefault.jpg",
-      "views_text": "258 views",
-      "views": 258,
-      "published_text": "6 days ago",
+      "views_text": "276 views",
+      "views": 276,
+      "published_text": "10 days ago",
       "published_date": "2025-09-17"
     },
     {
@@ -17,9 +27,9 @@
       "title": "Bizoni UH-Fr.Místek 7:2/4:1/-Superpohár-12.9.25 v Uh.Hradišti",
       "length": "",
       "thumbnail_url": "https://img.youtube.com/vi/nrj6_1IoYoo/maxresdefault.jpg",
-      "views_text": "201 views",
-      "views": 201,
-      "published_text": "10 days ago",
+      "views_text": "214 views",
+      "views": 214,
+      "published_text": "2 weeks ago",
       "published_date": "2025-09-13"
     },
     {
@@ -27,30 +37,20 @@
       "title": "Bizoni UH vs Žabinští Vlci Brno 6:4 | Semifinále poháru SFČR UH",
       "length": "",
       "thumbnail_url": "https://img.youtube.com/vi/pSGwSJvdd14/maxresdefault.jpg",
-      "views_text": "94 views",
-      "views": 94,
+      "views_text": "98 views",
+      "views": 98,
       "published_text": "3 months ago",
-      "published_date": "2025-06-23"
+      "published_date": "2025-06-27"
     },
     {
       "video_id": "AbGKYfOmtlw",
       "title": "FC Bizoni UH 14-1 Hombres Brno | HIGHLIGHTS",
       "length": "",
       "thumbnail_url": "https://img.youtube.com/vi/AbGKYfOmtlw/maxresdefault.jpg",
-      "views_text": "210 views",
-      "views": 210,
+      "views_text": "218 views",
+      "views": 218,
       "published_text": "6 months ago",
-      "published_date": "2025-03-23"
-    },
-    {
-      "video_id": "6TE21O06TZA",
-      "title": "FC Bizoni UH 11-3 Amor Kloboučky Vyškov B | HIGHLIGHTS",
-      "length": "",
-      "thumbnail_url": "https://img.youtube.com/vi/6TE21O06TZA/maxresdefault.jpg",
-      "views_text": "121 views",
-      "views": 121,
-      "published_text": "6 months ago",
-      "published_date": "2025-03-23"
+      "published_date": "2025-03-27"
     }
   ]
 }
