@@ -6,6 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/color"
+	"image/draw"
+	_ "image/jpeg"
+	"image/png"
 	"io"
 	"log"
 	"net/http"
@@ -19,11 +24,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"image"
-	"image/color"
-	"image/draw"
-	"image/png"
-	_ "image/jpeg"
 )
 
 const (
@@ -44,107 +44,131 @@ func dataPath() string {
 // ---------------- Image normalization for blog thumbnails ----------------
 // Target dimensions for blog images
 const (
-    blogImgW = 1600
-    blogImgH = 969
+	blogImgW = 1600
+	blogImgH = 969
 )
 
 // avgLuma computes average luminance of an image (0..255)
 func avgLuma(img image.Image) float64 {
-    b := img.Bounds()
-    if b.Empty() { return 0 }
-    var sum uint64
-    var n uint64
-    for y := b.Min.Y; y < b.Max.Y; y += 4 { // sample every 4th row for speed
-        for x := b.Min.X; x < b.Max.X; x += 4 { // sample every 4th column
-            r,g,bv,_ := img.At(x,y).RGBA()
-            r8 := float64(r>>8)
-            g8 := float64(g>>8)
-            b8 := float64(bv>>8)
-            // Rec. 601 approximate luma
-            l := 0.299*r8 + 0.587*g8 + 0.114*b8
-            if l < 0 { l = 0 }
-            if l > 255 { l = 255 }
-            sum += uint64(l)
-            n++
-        }
-    }
-    if n == 0 { return 0 }
-    return float64(sum)/float64(n)
+	b := img.Bounds()
+	if b.Empty() {
+		return 0
+	}
+	var sum uint64
+	var n uint64
+	for y := b.Min.Y; y < b.Max.Y; y += 4 { // sample every 4th row for speed
+		for x := b.Min.X; x < b.Max.X; x += 4 { // sample every 4th column
+			r, g, bv, _ := img.At(x, y).RGBA()
+			r8 := float64(r >> 8)
+			g8 := float64(g >> 8)
+			b8 := float64(bv >> 8)
+			// Rec. 601 approximate luma
+			l := 0.299*r8 + 0.587*g8 + 0.114*b8
+			if l < 0 {
+				l = 0
+			}
+			if l > 255 {
+				l = 255
+			}
+			sum += uint64(l)
+			n++
+		}
+	}
+	if n == 0 {
+		return 0
+	}
+	return float64(sum) / float64(n)
 }
 
 // fitWithin returns destination size that fits source into max size, without upscaling
 func fitWithin(sw, sh, mw, mh int) (int, int) {
-    if sw <= 0 || sh <= 0 { return 0, 0 }
-    if sw <= mw && sh <= mh {
-        return sw, sh
-    }
-    wr := float64(mw) / float64(sw)
-    hr := float64(mh) / float64(sh)
-    r := wr
-    if hr < wr { r = hr }
-    dw := int(float64(sw) * r)
-    dh := int(float64(sh) * r)
-    if dw < 1 { dw = 1 }
-    if dh < 1 { dh = 1 }
-    return dw, dh
+	if sw <= 0 || sh <= 0 {
+		return 0, 0
+	}
+	if sw <= mw && sh <= mh {
+		return sw, sh
+	}
+	wr := float64(mw) / float64(sw)
+	hr := float64(mh) / float64(sh)
+	r := wr
+	if hr < wr {
+		r = hr
+	}
+	dw := int(float64(sw) * r)
+	dh := int(float64(sh) * r)
+	if dw < 1 {
+		dw = 1
+	}
+	if dh < 1 {
+		dh = 1
+	}
+	return dw, dh
 }
 
 // scaleNearest performs nearest-neighbor downscaling from src to a new RGBA of size (dw, dh)
 func scaleNearest(src image.Image, dw, dh int) *image.RGBA {
-    dst := image.NewRGBA(image.Rect(0,0,dw,dh))
-    sb := src.Bounds()
-    sw := sb.Dx()
-    sh := sb.Dy()
-    for y := 0; y < dh; y++ {
-        sy := sb.Min.Y + int(float64(y)*float64(sh)/float64(dh))
-        for x := 0; x < dw; x++ {
-            sx := sb.Min.X + int(float64(x)*float64(sw)/float64(dw))
-            dst.Set(x, y, src.At(sx, sy))
-        }
-    }
-    return dst
+	dst := image.NewRGBA(image.Rect(0, 0, dw, dh))
+	sb := src.Bounds()
+	sw := sb.Dx()
+	sh := sb.Dy()
+	for y := 0; y < dh; y++ {
+		sy := sb.Min.Y + int(float64(y)*float64(sh)/float64(dh))
+		for x := 0; x < dw; x++ {
+			sx := sb.Min.X + int(float64(x)*float64(sw)/float64(dw))
+			dst.Set(x, y, src.At(sx, sy))
+		}
+	}
+	return dst
 }
 
 // normalizeBlogImage decodes any supported image (PNG/JPEG) and writes a 1600x969 PNG with letterboxing (black/white)
 func normalizeBlogImage(r io.Reader, outPath string) error {
-    img, _, err := image.Decode(r)
-    if err != nil {
-        return fmt.Errorf("decode image: %w", err)
-    }
-    // Choose background based on average luminance
-    l := avgLuma(img)
-    bg := color.Black
-    if l > 160 { // bright image -> white bg; tweak threshold as needed
-        bg = color.White
-    }
-    // Compute fitted size (no upscaling)
-    srcB := img.Bounds()
-    dw, dh := fitWithin(srcB.Dx(), srcB.Dy(), blogImgW, blogImgH)
-    var scaled image.Image
-    if dw == srcB.Dx() && dh == srcB.Dy() {
-        scaled = img
-    } else {
-        scaled = scaleNearest(img, dw, dh)
-    }
-    // Compose centered on canvas
-    canvas := image.NewRGBA(image.Rect(0,0,blogImgW,blogImgH))
-    draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C:bg}, image.Point{}, draw.Src)
-    offX := (blogImgW - dw) / 2
-    offY := (blogImgH - dh) / 2
-    draw.Draw(canvas, image.Rect(offX, offY, offX+dw, offY+dh), scaled, scaled.Bounds().Min, draw.Over)
-    // Write PNG atomically
-    if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil { return err }
-    tmp := outPath + ".tmp"
-    f, err := os.Create(tmp)
-    if err != nil { return err }
-    enc := png.Encoder{CompressionLevel: png.BestSpeed}
-    if err := enc.Encode(f, canvas); err != nil {
-        f.Close(); _ = os.Remove(tmp); return fmt.Errorf("encode png: %w", err)
-    }
-    f.Close()
-    _ = os.Remove(outPath)
-    if err := os.Rename(tmp, outPath); err != nil { return err }
-    return nil
+	img, _, err := image.Decode(r)
+	if err != nil {
+		return fmt.Errorf("decode image: %w", err)
+	}
+	// Choose background based on average luminance
+	l := avgLuma(img)
+	bg := color.Black
+	if l > 160 { // bright image -> white bg; tweak threshold as needed
+		bg = color.White
+	}
+	// Compute fitted size (no upscaling)
+	srcB := img.Bounds()
+	dw, dh := fitWithin(srcB.Dx(), srcB.Dy(), blogImgW, blogImgH)
+	var scaled image.Image
+	if dw == srcB.Dx() && dh == srcB.Dy() {
+		scaled = img
+	} else {
+		scaled = scaleNearest(img, dw, dh)
+	}
+	// Compose centered on canvas
+	canvas := image.NewRGBA(image.Rect(0, 0, blogImgW, blogImgH))
+	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: bg}, image.Point{}, draw.Src)
+	offX := (blogImgW - dw) / 2
+	offY := (blogImgH - dh) / 2
+	draw.Draw(canvas, image.Rect(offX, offY, offX+dw, offY+dh), scaled, scaled.Bounds().Min, draw.Over)
+	// Write PNG atomically
+	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+		return err
+	}
+	tmp := outPath + ".tmp"
+	f, err := os.Create(tmp)
+	if err != nil {
+		return err
+	}
+	enc := png.Encoder{CompressionLevel: png.BestSpeed}
+	if err := enc.Encode(f, canvas); err != nil {
+		f.Close()
+		_ = os.Remove(tmp)
+		return fmt.Errorf("encode png: %w", err)
+	}
+	f.Close()
+	_ = os.Remove(outPath)
+	if err := os.Rename(tmp, outPath); err != nil {
+		return err
+	}
+	return nil
 }
 
 func staticPath() string {
@@ -391,12 +415,72 @@ func ytChannel() string {
 
 // BlogItem represents a simple blog card item for the homepage
 type BlogItem struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Link        string    `json:"link"`
-	Image       string    `json:"image"`
-	MTime       time.Time `json:"mtime"`
-	Categories  []string  `json:"categories,omitempty"`
+	ID         string    `json:"id"`
+	Title      string    `json:"title"`
+	Slug       string    `json:"slug"`
+	Link       string    `json:"link"`
+	Image      string    `json:"image"`
+	MTime      time.Time `json:"mtime"`
+	Categories []string  `json:"categories,omitempty"`
+}
+
+// generateSlug creates a URL-friendly slug from a title
+func generateSlug(title string) string {
+	slug := strings.ToLower(title)
+	// Replace Czech characters with their ASCII equivalents
+	replacements := map[string]string{
+		"á": "a", "ä": "a", "č": "c", "ď": "d", "é": "e", "ě": "e", "í": "i", "ľ": "l",
+		"ň": "n", "ó": "o", "ö": "o", "ô": "o", "ř": "r", "š": "s", "ť": "t", "ú": "u",
+		"ů": "u", "ý": "y", "ž": "z",
+		"Á": "a", "Ä": "a", "Č": "c", "Ď": "d", "É": "e", "Ě": "e", "Í": "i", "Ľ": "l",
+		"Ň": "n", "Ó": "o", "Ö": "o", "Ô": "o", "Ř": "r", "Š": "s", "Ť": "t", "Ú": "u",
+		"Ů": "u", "Ý": "y", "Ž": "z",
+	}
+	for czech, ascii := range replacements {
+		slug = strings.ReplaceAll(slug, czech, ascii)
+	}
+	// Remove any character that isn't alphanumeric, space, or hyphen
+	re := regexp.MustCompile(`[^a-z0-9\s-]`)
+	slug = re.ReplaceAllString(slug, "")
+	// Replace spaces and multiple hyphens with a single hyphen
+	re = regexp.MustCompile(`[\s-]+`)
+	slug = re.ReplaceAllString(slug, "-")
+	// Remove leading and trailing hyphens
+	slug = strings.Trim(slug, "-")
+	return slug
+}
+
+// ensureUniqueSlug ensures the slug is unique by appending a number if needed
+func ensureUniqueSlug(siteRoot, baseSlug string) string {
+	blogDir := filepath.Join(siteRoot, "blog")
+	entries, err := os.ReadDir(blogDir)
+	if err != nil {
+		return baseSlug
+	}
+	existingSlugs := make(map[string]bool)
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".html") {
+			continue
+		}
+		// Extract slug from filename if it follows the new pattern
+		name := strings.TrimSuffix(e.Name(), ".html")
+		// Check if it's a slug-based filename (contains letters, not just numbers)
+		if regexp.MustCompile(`[a-z]`).MatchString(name) {
+			existingSlugs[name] = true
+		}
+	}
+	if !existingSlugs[baseSlug] {
+		return baseSlug
+	}
+	// Try baseSlug-2, baseSlug-3, etc.
+	for i := 2; i < 100; i++ {
+		testSlug := fmt.Sprintf("%s-%d", baseSlug, i)
+		if !existingSlugs[testSlug] {
+			return testSlug
+		}
+	}
+	// Fallback to timestamp
+	return fmt.Sprintf("%s-%d", baseSlug, time.Now().Unix())
 }
 
 func extractCategories(path string) []string {
@@ -415,15 +499,82 @@ func extractCategories(path string) []string {
 	return categories
 }
 
-// listLatestBlogs scans the blog and image folders under the provided site root and returns the latest N posts
-func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
-	blogDir := filepath.Join(siteRoot, "blog")
-	imgDir := filepath.Join(siteRoot, "img", "blog")
-	entries, err := os.ReadDir(blogDir)
+// extractAnnotation extracts the annotation from blog HTML meta tags
+func extractAnnotation(path string) string {
+	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("readdir blog: %w", err)
+		return ""
 	}
-	re := regexp.MustCompile(`^(\d{4})\.html$`)
+	s := string(b)
+	// Try to find description in meta tag first
+	re := regexp.MustCompile(`(?is)<meta name="description" content="([^"]+)"`)
+	m := re.FindStringSubmatch(s)
+	if len(m) >= 2 {
+		return m[1]
+	}
+	return ""
+}
+
+// extractContentMode extracts the content mode from blog HTML meta tags
+func extractContentMode(path string) string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	s := string(b)
+	// Try to find content_mode in meta tag first
+	re := regexp.MustCompile(`(?is)<meta name="content_mode" content="([^"]+)"`)
+	m := re.FindStringSubmatch(s)
+	if len(m) >= 2 {
+		return m[1]
+	}
+	// Default to visual if not found
+	return "visual"
+}
+
+// extractSlug extracts the slug from blog HTML meta tags or generates from filename
+func extractSlug(path, filename string) string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	s := string(b)
+	// Try to find slug in meta tag first
+	re := regexp.MustCompile(`(?is)<meta name="slug" content="([^"]+)"`)
+	m := re.FindStringSubmatch(s)
+	if len(m) >= 2 {
+		return m[1]
+	}
+	// Fallback: generate slug from title
+	title := extractTitle(path)
+	if title != "" {
+		return generateSlug(title)
+	}
+	// Final fallback: use filename without extension
+	return strings.TrimSuffix(filename, ".html")
+}
+
+func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
+	// REMOTE SERVER CONFIGURATION - UPDATE THIS PATH
+	remoteBlogDir := "/var/www/bizoni/blog" // Path to blogs on remote server
+
+	// For local development, you can override with environment variable
+	if envPath := os.Getenv("REMOTE_BLOG_DIR"); envPath != "" {
+		remoteBlogDir = envPath
+	}
+
+	// If remote directory doesn't exist locally, try to sync or return error
+	if _, err := os.Stat(remoteBlogDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("remote blog directory not found: %s. Set REMOTE_BLOG_DIR environment variable or ensure remote directory is mounted", remoteBlogDir)
+	}
+
+	imgDir := filepath.Join(filepath.Dir(remoteBlogDir), "img", "blog")
+	entries, err := os.ReadDir(remoteBlogDir)
+	if err != nil {
+		return nil, fmt.Errorf("readdir remote blog: %w", err)
+	}
+	// Match both numeric (0001.html) and slug-based filenames
+	re := regexp.MustCompile(`^(\d{4}|[a-z0-9-]+)\.html$`)
 	var items []BlogItem
 	for _, e := range entries {
 		name := e.Name()
@@ -432,12 +583,13 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		}
 		id := strings.TrimSuffix(name, ".html")
 		// Title and categories extraction from blog HTML
-		blogPath := filepath.Join(blogDir, name)
+		blogPath := filepath.Join(remoteBlogDir, name)
 		title := extractTitle(blogPath)
+		slug := extractSlug(blogPath, name)
 		cats := extractCategories(blogPath)
 		// Determine mod time - prefer image modtime if exists, else html
 		mtime := time.Time{}
-		htmlInfo, err1 := os.Stat(filepath.Join(blogDir, name))
+		htmlInfo, err1 := os.Stat(filepath.Join(remoteBlogDir, name))
 		if err1 == nil {
 			mtime = htmlInfo.ModTime()
 		}
@@ -447,13 +599,21 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 				mtime = imgInfo.ModTime()
 			}
 		}
+		// Use slug-based link if slug exists and is not just numeric, otherwise use numeric
+		var link string
+		if slug != "" && regexp.MustCompile(`[a-z]`).MatchString(slug) {
+			link = "/blog/" + slug
+		} else {
+			link = "/blog/" + id + ".html"
+		}
 		items = append(items, BlogItem{
-			ID:          id,
-			Title:       title,
-			Link:        "/blog/" + id + ".html",
-			Image:       "/img/blog/" + id + ".png",
-			MTime:       mtime,
-			Categories:  cats,
+			ID:         id,
+			Title:      title,
+			Slug:       slug,
+			Link:       link,
+			Image:      "/img/blog/" + id + ".png",
+			MTime:      mtime,
+			Categories: cats,
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -758,12 +918,15 @@ func main() {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		// Expect multipart form with: title, content (HTML), image (png), categories (comma-separated)
+		// Expect multipart form with: title, slug, annotation, content_mode, content (HTML), image (png), categories (comma-separated)
 		if err := r.ParseMultipartForm(20 << 20); err != nil { // 20MB
 			http.Error(w, "invalid form", http.StatusBadRequest)
 			return
 		}
 		title := strings.TrimSpace(r.FormValue("title"))
+		slugInput := strings.TrimSpace(r.FormValue("slug"))
+		annotation := strings.TrimSpace(r.FormValue("annotation"))
+		contentMode := strings.TrimSpace(r.FormValue("content_mode"))
 		htmlContent := strings.TrimSpace(r.FormValue("content"))
 		catsRaw := strings.TrimSpace(r.FormValue("categories"))
 		var cats []string
@@ -778,6 +941,10 @@ func main() {
 		if title == "" || htmlContent == "" {
 			http.Error(w, "missing title or content", http.StatusBadRequest)
 			return
+		}
+		// Default content mode to visual if not specified
+		if contentMode == "" {
+			contentMode = "visual"
 		}
 		f, fh, err := r.FormFile("image")
 		if err != nil {
@@ -799,6 +966,18 @@ func main() {
 			return
 		}
 		idStr := fmt.Sprintf("%04d", nid)
+
+		// Determine slug
+		var finalSlug string
+		if slugInput != "" {
+			// Use provided slug (already validated by frontend)
+			finalSlug = slugInput
+		} else {
+			// Generate from title
+			baseSlug := generateSlug(title)
+			finalSlug = ensureUniqueSlug(site, baseSlug)
+		}
+
 		// Write image (normalize to 1600x969 with letterboxing)
 		imgDir := filepath.Join(site, "img", "blog")
 		if err := os.MkdirAll(imgDir, 0755); err != nil {
@@ -836,27 +1015,100 @@ func main() {
 			for _, c := range cats {
 				meta += "<meta name=\"category\" content=\"" + htmlEscape(c) + "\">\n"
 			}
-			reHead := regexp.MustCompile(`(?is)</head>`) 
+			reHead := regexp.MustCompile(`(?is)</head>`)
 			s = reHead.ReplaceAllString(s, meta+"</head>")
 		}
-		// Write new blog html
+		// Inject slug as <meta name="slug" content="..."> before </head>
+		slugMeta := "<meta name=\"slug\" content=\"" + htmlEscape(finalSlug) + "\">\n"
+		reHeadSlug := regexp.MustCompile(`(?is)</head>`)
+		s = reHeadSlug.ReplaceAllString(s, slugMeta+"</head>")
+		// Inject annotation as <meta name="description" content="..."> before </head>
+		if annotation != "" {
+			annotationMeta := "<meta name=\"description\" content=\"" + htmlEscape(annotation) + "\">\n"
+			reHeadAnnotation := regexp.MustCompile(`(?is)</head>`)
+			s = reHeadAnnotation.ReplaceAllString(s, annotationMeta+"</head>")
+		}
+		// Inject content mode as <meta name="content_mode" content="..."> before </head>
+		contentModeMeta := "<meta name=\"content_mode\" content=\"" + htmlEscape(contentMode) + "\">\n"
+		reHeadContentMode := regexp.MustCompile(`(?is)</head>`)
+		s = reHeadContentMode.ReplaceAllString(s, contentModeMeta+"</head>")
+
+		// Write new blog html with both numeric and slug filenames
 		blogDir := filepath.Join(site, "blog")
 		if err := os.MkdirAll(blogDir, 0755); err != nil {
 			http.Error(w, "storage error: blog dir", http.StatusInternalServerError)
 			return
 		}
+
+		// Write numeric file (for backward compatibility)
 		htmlPath := filepath.Join(blogDir, idStr+".html")
 		if err := os.WriteFile(htmlPath, []byte(s), 0644); err != nil {
 			http.Error(w, "cannot write blog (is STATIC_PATH read-only?)", http.StatusInternalServerError)
 			return
 		}
+
+		// Write slug file (new format)
+		slugPath := filepath.Join(blogDir, finalSlug+".html")
+		if err := os.WriteFile(slugPath, []byte(s), 0644); err != nil {
+			http.Error(w, "cannot write slug blog (is STATIC_PATH read-only?)", http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":      idStr,
-			"link":    "/blog/" + idStr + ".html",
+			"slug":    finalSlug,
+			"link":    "/blog/" + finalSlug,
 			"image":   "/img/blog/" + idStr + ".png",
 			"message": "created",
 		})
+	})
+
+	// Blog slug resolution: convert slug to numeric ID
+	mux.HandleFunc("/api/blog/resolve", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		if r.Method != http.MethodGet {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		slug := strings.TrimSpace(r.URL.Query().Get("slug"))
+		if slug == "" {
+			http.Error(w, "missing slug", http.StatusBadRequest)
+			return
+		}
+		// Validate slug format
+		if !regexp.MustCompile(`^[a-z0-9-]+$`).MatchString(slug) {
+			http.Error(w, "invalid slug format", http.StatusBadRequest)
+			return
+		}
+		site := staticPath()
+		blogDir := filepath.Join(site, "blog")
+
+		// First try to find slug-based file
+		slugPath := filepath.Join(blogDir, slug+".html")
+		if b, err := os.ReadFile(slugPath); err == nil {
+			s := string(b)
+			// Try to find the corresponding numeric file
+			entries, _ := os.ReadDir(blogDir)
+			for _, e := range entries {
+				name := e.Name()
+				if !regexp.MustCompile(`^\d{4}\.html$`).MatchString(name) {
+					continue
+				}
+				numericPath := filepath.Join(blogDir, name)
+				numericContent, _ := os.ReadFile(numericPath)
+				if string(numericContent) == s {
+					// Found matching numeric file
+					numericID := strings.TrimSuffix(name, ".html")
+					w.Header().Set("Content-Type", "application/json; charset=utf-8")
+					_ = json.NewEncoder(w).Encode(map[string]any{"id": numericID, "slug": slug})
+					return
+				}
+			}
+		}
+
+		// If not found, return 404
+		http.Error(w, "slug not found", http.StatusNotFound)
 	})
 
 	// Blog fetch (admin): returns title, content html, image for editing
@@ -901,9 +1153,12 @@ func main() {
 			content = strings.TrimSpace(mc[1])
 		}
 		cats := extractCategories(path)
+		slug := extractSlug(path, id+".html")
+		annotation := extractAnnotation(path)
+		contentMode := extractContentMode(path)
 		img := "/img/blog/" + id + ".png"
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode(map[string]any{"id": id, "title": title, "content_html": content, "image": img, "categories": cats})
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": id, "title": title, "slug": slug, "annotation": annotation, "content_mode": contentMode, "content_html": content, "image": img, "categories": cats})
 	})
 
 	// Blog edit (admin): update title/content and optionally replace image
@@ -921,7 +1176,7 @@ func main() {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		// Expect multipart form with: title, content (HTML), image (png), categories (comma-separated)
+		// Expect multipart form with: title, slug, annotation, content_mode, content (HTML), image (png), categories (comma-separated)
 		if err := r.ParseMultipartForm(25 << 20); err != nil {
 			http.Error(w, "invalid form", http.StatusBadRequest)
 			return
@@ -933,6 +1188,9 @@ func main() {
 			return
 		}
 		title := strings.TrimSpace(r.FormValue("title"))
+		slugInput := strings.TrimSpace(r.FormValue("slug"))
+		annotation := strings.TrimSpace(r.FormValue("annotation"))
+		contentMode := strings.TrimSpace(r.FormValue("content_mode"))
 		htmlContent := strings.TrimSpace(r.FormValue("content"))
 		catsRaw := strings.TrimSpace(r.FormValue("categories"))
 		var cats []string
@@ -947,6 +1205,10 @@ func main() {
 		if title == "" || htmlContent == "" {
 			http.Error(w, "missing title or content", http.StatusBadRequest)
 			return
+		}
+		// Default content mode to visual if not specified
+		if contentMode == "" {
+			contentMode = "visual"
 		}
 		site := staticPath()
 		if f, fh, err := r.FormFile("image"); err == nil {
@@ -986,9 +1248,29 @@ func main() {
 			for _, c := range cats {
 				meta += "<meta name=\"category\" content=\"" + htmlEscape(c) + "\">\n"
 			}
-			reHead := regexp.MustCompile(`(?is)</head>`) 
+			reHead := regexp.MustCompile(`(?is)</head>`)
 			s = reHead.ReplaceAllString(s, meta+"</head>")
 		}
+		// Update or add slug meta tag
+		reSlug := regexp.MustCompile(`(?is)<meta name="slug" content="[^"]*"\s*/?>\s*`)
+		s = reSlug.ReplaceAllString(s, "")
+		slugMeta := "<meta name=\"slug\" content=\"" + htmlEscape(slugInput) + "\">\n"
+		reHeadSlug := regexp.MustCompile(`(?is)</head>`)
+		s = reHeadSlug.ReplaceAllString(s, slugMeta+"</head>")
+		// Update or add annotation meta tag
+		reAnnotation := regexp.MustCompile(`(?is)<meta name="description" content="[^"]*"\s*/?>\s*`)
+		s = reAnnotation.ReplaceAllString(s, "")
+		if annotation != "" {
+			annotationMeta := "<meta name=\"description\" content=\"" + htmlEscape(annotation) + "\">\n"
+			reHeadAnnotation := regexp.MustCompile(`(?is)</head>`)
+			s = reHeadAnnotation.ReplaceAllString(s, annotationMeta+"</head>")
+		}
+		// Update or add content mode meta tag
+		reContentMode := regexp.MustCompile(`(?is)<meta name="content_mode" content="[^"]*"\s*/?>\s*`)
+		s = reContentMode.ReplaceAllString(s, "")
+		contentModeMeta := "<meta name=\"content_mode\" content=\"" + htmlEscape(contentMode) + "\">\n"
+		reHeadContentMode := regexp.MustCompile(`(?is)</head>`)
+		s = reHeadContentMode.ReplaceAllString(s, contentModeMeta+"</head>")
 		if err := os.WriteFile(hPath, []byte(s), 0644); err != nil {
 			http.Error(w, "cannot write", http.StatusInternalServerError)
 			return
@@ -1019,44 +1301,84 @@ func main() {
 		w.WriteHeader(http.StatusNoContent)
 	})
 
-    // Static file server for the frontend
-    sp := staticPath()
-    log.Printf("serving static from: %s", sp)
-    fs := http.FileServer(http.Dir(sp))
-    // Serve common asset prefixes explicitly
-    mux.Handle("/img/", fs)
-    mux.Handle("/css/", fs)
-    mux.Handle("/js/", fs)
-    // Protect /admin/ with Basic Auth
-    mux.Handle("/admin/", basicAuth(http.StripPrefix("/admin/", http.FileServer(http.Dir(filepath.Join(staticPath(), "admin"))))))
-    mux.Handle("/blog/", fs)
-    mux.Handle("/zapasy/", fs)
-    // Fallback: serve index.html at root, otherwise delegate to static file server
-    mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-            http.ServeFile(w, r, filepath.Join(sp, "index.html"))
-            return
-        }
-        fs.ServeHTTP(w, r)
-    })
+	// Static file server for the frontend
+	sp := staticPath()
+	log.Printf("serving static from: %s", sp)
+	fs := http.FileServer(http.Dir(sp))
+	// Serve common asset prefixes explicitly
+	mux.Handle("/img/", fs)
+	mux.Handle("/css/", fs)
+	mux.Handle("/js/", fs)
+	// Protect /admin/ with Basic Auth
+	mux.Handle("/admin/", basicAuth(http.StripPrefix("/admin/", http.FileServer(http.Dir(filepath.Join(staticPath(), "admin"))))))
 
-    port := os.Getenv("PORT")
-    if port == "" { port = "8080" }
-    srv := &http.Server{
-        Addr:    ":" + port,
-        Handler: mux,
-    }
-    go func() {
-        log.Printf("server listening on :%s", port)
-        if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-            log.Fatalf("server error: %v", err)
-        }
-    }()
+	// Custom slug-based blog routing
+	mux.HandleFunc("/blog/", func(w http.ResponseWriter, r *http.Request) {
+		// Extract the slug/ID from the path
+		path := strings.TrimPrefix(r.URL.Path, "/blog/")
+		if path == "" || path == "/" {
+			// Serve the main blog listing page
+			http.ServeFile(w, r, filepath.Join(sp, "blog.html"))
+			return
+		}
 
-    <-ctx.Done()
-    ctxShut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-    defer cancel()
-    _ = srv.Shutdown(ctxShut)
+		// Remove .html extension if present
+		if strings.HasSuffix(path, ".html") {
+			path = strings.TrimSuffix(path, ".html")
+		}
+
+		// Check if it's a numeric ID (legacy format)
+		if regexp.MustCompile(`^\d{4}$`).MatchString(path) {
+			// Serve numeric file directly
+			numericPath := filepath.Join(sp, "blog", path+".html")
+			if _, err := os.Stat(numericPath); err == nil {
+				http.ServeFile(w, r, numericPath)
+				return
+			}
+		}
+
+		// Check if it's a slug (new format)
+		if regexp.MustCompile(`^[a-z0-9-]+$`).MatchString(path) {
+			slugPath := filepath.Join(sp, "blog", path+".html")
+			if _, err := os.Stat(slugPath); err == nil {
+				http.ServeFile(w, r, slugPath)
+				return
+			}
+		}
+
+		// If not found, serve 404
+		http.NotFound(w, r)
+	})
+
+	mux.Handle("/zapasy/", fs)
+	// Fallback: serve index.html at root, otherwise delegate to static file server
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" || r.URL.Path == "/index.html" {
+			http.ServeFile(w, r, filepath.Join(sp, "index.html"))
+			return
+		}
+		fs.ServeHTTP(w, r)
+	})
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
+	}
+	go func() {
+		log.Printf("server listening on :%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	<-ctx.Done()
+	ctxShut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(ctxShut)
 }
 
 func okCORS(w http.ResponseWriter) {
