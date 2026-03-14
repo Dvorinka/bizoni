@@ -555,23 +555,23 @@ func extractSlug(path, filename string) string {
 }
 
 func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
-	// REMOTE SERVER CONFIGURATION - UPDATE THIS PATH
-	remoteBlogDir := "/var/www/bizoni/blog" // Path to blogs on remote server
+	// Use the siteRoot path where blogs are actually located
+	blogDir := filepath.Join(siteRoot, "blog")
 
 	// For local development, you can override with environment variable
 	if envPath := os.Getenv("REMOTE_BLOG_DIR"); envPath != "" {
-		remoteBlogDir = envPath
+		blogDir = envPath
 	}
 
-	// If remote directory doesn't exist locally, try to sync or return error
-	if _, err := os.Stat(remoteBlogDir); os.IsNotExist(err) {
-		return nil, fmt.Errorf("remote blog directory not found: %s. Set REMOTE_BLOG_DIR environment variable or ensure remote directory is mounted", remoteBlogDir)
+	// If blog directory doesn't exist, return error
+	if _, err := os.Stat(blogDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("blog directory not found: %s. Set REMOTE_BLOG_DIR environment variable or ensure blog directory exists", blogDir)
 	}
 
-	imgDir := filepath.Join(filepath.Dir(remoteBlogDir), "img", "blog")
-	entries, err := os.ReadDir(remoteBlogDir)
+	imgDir := filepath.Join(filepath.Dir(blogDir), "img", "blog")
+	entries, err := os.ReadDir(blogDir)
 	if err != nil {
-		return nil, fmt.Errorf("readdir remote blog: %w", err)
+		return nil, fmt.Errorf("readdir blog: %w", err)
 	}
 	// Match both numeric (0001.html) and slug-based filenames
 	re := regexp.MustCompile(`^(\d{4}|[a-z0-9-]+)\.html$`)
@@ -583,13 +583,13 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		}
 		id := strings.TrimSuffix(name, ".html")
 		// Title and categories extraction from blog HTML
-		blogPath := filepath.Join(remoteBlogDir, name)
+		blogPath := filepath.Join(blogDir, name)
 		title := extractTitle(blogPath)
 		slug := extractSlug(blogPath, name)
 		cats := extractCategories(blogPath)
 		// Determine mod time - prefer image modtime if exists, else html
 		mtime := time.Time{}
-		htmlInfo, err1 := os.Stat(filepath.Join(remoteBlogDir, name))
+		htmlInfo, err1 := os.Stat(filepath.Join(blogDir, name))
 		if err1 == nil {
 			mtime = htmlInfo.ModTime()
 		}
@@ -810,6 +810,25 @@ func main() {
 		w.Write([]byte("window.FACR_DATA="))
 		w.Write(payload)
 		w.Write([]byte(";"))
+	})
+
+	// Blog list JSON for frontend
+	mux.HandleFunc("/data/blog-list.json", func(w http.ResponseWriter, r *http.Request) {
+		okCORS(w)
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		limit := 50 // Default limit for blog list
+		if q := r.URL.Query().Get("limit"); q != "" {
+			if n, err := strconv.Atoi(q); err == nil && n > 0 {
+				limit = n
+			}
+		}
+		items, err := listLatestBlogs(staticPath(), limit)
+		if err != nil {
+			log.Printf("blog-list.json error: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(items)
 	})
 
 	// Blog API: latest N posts from filesystem
