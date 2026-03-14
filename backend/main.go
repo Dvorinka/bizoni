@@ -554,6 +554,22 @@ func extractSlug(path, filename string) string {
 	return strings.TrimSuffix(filename, ".html")
 }
 
+func extractBlogID(path, filename string) string {
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return strings.TrimSuffix(filename, ".html")
+	}
+	s := string(b)
+	// Try to find ID in meta tag first
+	re := regexp.MustCompile(`(?is)<meta name="id" content="([^"]+)"`)
+	m := re.FindStringSubmatch(s)
+	if len(m) >= 2 {
+		return m[1]
+	}
+	// Fallback: use filename without extension
+	return strings.TrimSuffix(filename, ".html")
+}
+
 func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 	// Use the siteRoot path where blogs are actually located
 	blogDir := filepath.Join(siteRoot, "blog")
@@ -576,24 +592,35 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 	// Match both numeric (0001.html) and slug-based filenames
 	re := regexp.MustCompile(`^(\d{4}|[a-z0-9-]+)\.html$`)
 	var items []BlogItem
+	seenIDs := make(map[string]bool) // Track seen IDs to avoid duplicates
 	for _, e := range entries {
 		name := e.Name()
 		if !re.MatchString(name) {
 			continue
 		}
 		id := strings.TrimSuffix(name, ".html")
+
+		// Skip if this ID was already processed (deduplication)
+		if seenIDs[id] {
+			continue
+		}
+
 		// Title and categories extraction from blog HTML
 		blogPath := filepath.Join(blogDir, name)
 		title := extractTitle(blogPath)
 		slug := extractSlug(blogPath, name)
 		cats := extractCategories(blogPath)
+		blogID := extractBlogID(blogPath, name)
+
+		// Mark this ID as seen
+		seenIDs[id] = true
 		// Determine mod time - prefer image modtime if exists, else html
 		mtime := time.Time{}
 		htmlInfo, err1 := os.Stat(filepath.Join(blogDir, name))
 		if err1 == nil {
 			mtime = htmlInfo.ModTime()
 		}
-		if imgInfo, err2 := os.Stat(filepath.Join(imgDir, id+".png")); err2 == nil {
+		if imgInfo, err2 := os.Stat(filepath.Join(imgDir, blogID+".png")); err2 == nil {
 			// If image is newer, use that as a proxy for recency
 			if imgInfo.ModTime().After(mtime) {
 				mtime = imgInfo.ModTime()
@@ -611,7 +638,7 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 			Title:      title,
 			Slug:       slug,
 			Link:       link,
-			Image:      "/img/blog/" + id + ".png",
+			Image:      "/img/blog/" + blogID + ".png",
 			MTime:      mtime,
 			Categories: cats,
 		})
