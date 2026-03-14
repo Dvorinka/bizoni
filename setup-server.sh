@@ -58,9 +58,11 @@ generate_slug() {
     echo "$title" | tr '[:upper:]' '[:lower:]' | \
         sed 's/á/a/g; s/ä/a/g; s/č/c/g; s/ď/d/g; s/é/e/g; s/ě/e/g; s/í/i/g; s/ľ/l/g; s/ň/n/g; s/ó/o/g; s/ö/o/g; s/ô/o/g; s/ř/r/g; s/š/s/g; s/ť/t/g; s/ú/u/g; s/ů/u/g; s/ý/y/g; s/ž/z/g' | \
         sed 's/Á/a/g; s/Ä/a/g; s/Č/c/g; s/Ď/d/g; s/É/e/g; s/Ě/e/g; s/Í/i/g; s/Ľ/l/g; s/Ň/n/g; s/Ó/o/g; s/Ö/o/g; s/Ô/o/g; s/Ř/r/g; s/Š/s/g; s/Ť/t/g; s/Ú/u/g; s/Ů/u/g; s/Ý/y/g; s/Ž/z/g' | \
-        sed 's/[^a-z0-9\s-]//g' | \
-        sed 's/[\s-]\+/ -/g' | \
-        sed 's/^-\|-$//g'
+        iconv -c -f utf-8 -t ascii//TRANSLIT | \
+        sed 's/\s\+/-/g' | \
+        sed 's/[^a-z0-9\-]//g' | \
+        sed 's/-\+/-/g' | \
+        sed 's/^\-\|\-$//g'
 }
 
 # Function to extract title from HTML
