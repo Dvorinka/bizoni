@@ -1424,6 +1424,32 @@ func main() {
 				http.ServeFile(w, r, slugPath)
 				return
 			}
+
+			// If slug file doesn't exist, try to resolve slug to numeric file
+			blogDir := filepath.Join(sp, "blog")
+			entries, err := os.ReadDir(blogDir)
+			if err == nil {
+				for _, entry := range entries {
+					name := entry.Name()
+					if !regexp.MustCompile(`^\d{4}\.html$`).MatchString(name) {
+						continue
+					}
+					numericPath := filepath.Join(blogDir, name)
+
+					// Check if this numeric file has the matching slug
+					b, err := os.ReadFile(numericPath)
+					if err != nil {
+						continue
+					}
+					s := string(b)
+					re := regexp.MustCompile(`(?is)<meta name="slug" content="([^"]+)"`)
+					m := re.FindStringSubmatch(s)
+					if len(m) >= 2 && m[1] == path {
+						http.ServeFile(w, r, numericPath)
+						return
+					}
+				}
+			}
 		}
 
 		// If not found, serve 404
