@@ -610,7 +610,6 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		title := extractTitle(blogPath)
 		slug := extractSlug(blogPath, name)
 		cats := extractCategories(blogPath)
-		blogID := extractBlogID(blogPath, name)
 
 		// Mark this ID as seen
 		seenIDs[id] = true
@@ -620,7 +619,22 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		if err1 == nil {
 			mtime = htmlInfo.ModTime()
 		}
-		if imgInfo, err2 := os.Stat(filepath.Join(imgDir, blogID+".png")); err2 == nil {
+		// For image path, try to find corresponding numeric ID
+		imageID := id
+		if regexp.MustCompile(`^[a-z]`).MatchString(id) {
+			// This is a slug, try to find corresponding numeric file
+			numericFiles, _ := filepath.Glob(filepath.Join(blogDir, "????.html"))
+			for _, numericFile := range numericFiles {
+				numericID := strings.TrimSuffix(filepath.Base(numericFile), ".html")
+				numericPath := filepath.Join(blogDir, numericFile)
+				numericSlug := extractSlug(numericPath, numericFile)
+				if numericSlug == id {
+					imageID = numericID
+					break
+				}
+			}
+		}
+		if imgInfo, err2 := os.Stat(filepath.Join(imgDir, imageID+".png")); err2 == nil {
 			// If image is newer, use that as a proxy for recency
 			if imgInfo.ModTime().After(mtime) {
 				mtime = imgInfo.ModTime()
@@ -638,7 +652,7 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 			Title:      title,
 			Slug:       slug,
 			Link:       link,
-			Image:      "/img/blog/" + blogID + ".png",
+			Image:      "/img/blog/" + imageID + ".png",
 			MTime:      mtime,
 			Categories: cats,
 		})
