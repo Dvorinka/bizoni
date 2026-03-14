@@ -658,13 +658,33 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
-		// Descending by mod time, fallback to numeric ID desc
+		// Check if files were recently processed (all have same timestamp from setup script)
+		recentThreshold := time.Now().Add(-24 * time.Hour)
+		allRecent := items[i].MTime.After(recentThreshold) && items[j].MTime.After(recentThreshold)
+
+		if allRecent {
+			// If both files are recent (from setup script), sort by numeric ID (higher = newer)
+			ii, err1 := strconv.Atoi(items[i].ID)
+			jj, err2 := strconv.Atoi(items[j].ID)
+			if err1 == nil && err2 == nil {
+				return ii > jj
+			}
+			// If not numeric, fall back to string comparison
+			return items[i].ID > items[j].ID
+		}
+
+		// Otherwise, use modification time (newest first)
 		if !items[i].MTime.Equal(items[j].MTime) {
 			return items[i].MTime.After(items[j].MTime)
 		}
-		ii, _ := strconv.Atoi(items[i].ID)
-		jj, _ := strconv.Atoi(items[j].ID)
-		return ii > jj
+
+		// If times are equal and not recent, fallback to numeric ID
+		ii, err1 := strconv.Atoi(items[i].ID)
+		jj, err2 := strconv.Atoi(items[j].ID)
+		if err1 == nil && err2 == nil {
+			return ii > jj
+		}
+		return items[i].ID > items[j].ID
 	})
 	if limit > 0 && len(items) > limit {
 		items = items[:limit]
