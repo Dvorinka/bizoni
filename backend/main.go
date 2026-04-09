@@ -538,20 +538,17 @@ func extractSlug(path, filename string) string {
 	if err != nil {
 		return ""
 	}
-	s := string(b)
-	// Try to find slug in meta tag first
+	return extractSlugFromContent(string(b))
+}
+
+// extractSlugFromContent extracts the slug from HTML content string
+func extractSlugFromContent(htmlContent string) string {
 	re := regexp.MustCompile(`(?is)<meta name="slug" content="([^"]+)"`)
-	m := re.FindStringSubmatch(s)
+	m := re.FindStringSubmatch(htmlContent)
 	if len(m) >= 2 {
 		return m[1]
 	}
-	// Fallback: generate slug from title
-	title := extractTitle(path)
-	if title != "" {
-		return generateSlug(title)
-	}
-	// Final fallback: use filename without extension
-	return strings.TrimSuffix(filename, ".html")
+	return ""
 }
 
 func extractBlogID(path, filename string) string {
@@ -591,6 +588,7 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 	}
 	// Match both numeric (0001.html) and slug-based filenames
 	re := regexp.MustCompile(`^(\d{4}|[a-z0-9-]+)\.html$`)
+	numericRe := regexp.MustCompile(`^\d{4}$`)
 	var items []BlogItem
 	seenIDs := make(map[string]bool) // Track seen IDs to avoid duplicates
 	for _, e := range entries {
@@ -613,6 +611,13 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 
 		// Mark this ID as seen
 		seenIDs[id] = true
+		// Also mark slug/numeric counterpart to prevent duplicates
+		if slug != "" && slug != id {
+			seenIDs[slug] = true
+		}
+		if numericRe.MatchString(id) && slug != "" {
+			seenIDs[slug] = true
+		}
 		// Determine mod time - prefer image modtime if exists, else html
 		mtime := time.Time{}
 		htmlInfo, err1 := os.Stat(filepath.Join(blogDir, name))
@@ -1370,14 +1375,51 @@ func main() {
 			return
 		}
 		id := strings.TrimSpace(r.URL.Query().Get("id"))
-		re := regexp.MustCompile(`^\d{4}$`)
-		if !re.MatchString(id) {
+		// Accept numeric ID (0001) or slug (my-post-title)
+		validID := regexp.MustCompile(`^\d{4}$`).MatchString(id) || regexp.MustCompile(`^[a-z0-9-]+$`).MatchString(id)
+		if !validID {
 			http.Error(w, "invalid id", http.StatusBadRequest)
 			return
 		}
 		site := staticPath()
-		_ = os.Remove(filepath.Join(site, "blog", id+".html"))
-		_ = os.Remove(filepath.Join(site, "img", "blog", id+".png"))
+		blogDir := filepath.Join(site, "blog")
+
+		// If numeric ID, also find and delete the slug file
+		if regexp.MustCompile(`^\d{4}$`).MatchString(id) {
+			// Delete numeric HTML file
+			numericPath := filepath.Join(blogDir, id+".html")
+			// Find slug before deleting
+			if content, err := os.ReadFile(numericPath); err == nil {
+				slug := extractSlugFromContent(string(content))
+				if slug != "" && slug != id {
+					_ = os.Remove(filepath.Join(blogDir, slug+".html"))
+				}
+			}
+			_ = os.Remove(numericPath)
+			// Delete image
+			_ = os.Remove(filepath.Join(site, "img", "blog", id+".png"))
+		} else {
+			// It's a slug - find the numeric ID and delete both
+			entries, _ := os.ReadDir(blogDir)
+			for _, e := range entries {
+				name := e.Name()
+				if !regexp.MustCompile(`^\d{4}\.html$`).MatchString(name) {
+					continue
+				}
+				numericID := strings.TrimSuffix(name, ".html")
+				numericPath := filepath.Join(blogDir, name)
+				if content, err := os.ReadFile(numericPath); err == nil {
+					fileSlug := extractSlugFromContent(string(content))
+					if fileSlug == id {
+						// Found matching numeric file, delete both
+						_ = os.Remove(numericPath)
+						_ = os.Remove(filepath.Join(site, "img", "blog", numericID+".png"))
+						_ = os.Remove(filepath.Join(blogDir, id+".html"))
+						break
+					}
+				}
+			}
+		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 
