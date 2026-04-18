@@ -1117,6 +1117,10 @@ func main() {
 		contentModeMeta := "<meta name=\"content_mode\" content=\"" + htmlEscape(contentMode) + "\">\n"
 		reHeadContentMode := regexp.MustCompile(`(?is)</head>`)
 		s = reHeadContentMode.ReplaceAllString(s, contentModeMeta+"</head>")
+		// Inject Rybbit analytics script before </head>
+		rybbitScript := "<script src=\"https://rybbit.tdvorak.dev/api/script.js\" data-site-id=\"d40b7ffffffa\" defer></script>\n"
+		reHeadRybbit := regexp.MustCompile(`(?is)</head>`)
+		s = reHeadRybbit.ReplaceAllString(s, rybbitScript+"</head>")
 
 		// Write new blog html with both numeric and slug filenames
 		blogDir := filepath.Join(site, "blog")
@@ -1356,6 +1360,12 @@ func main() {
 		contentModeMeta := "<meta name=\"content_mode\" content=\"" + htmlEscape(contentMode) + "\">\n"
 		reHeadContentMode := regexp.MustCompile(`(?is)</head>`)
 		s = reHeadContentMode.ReplaceAllString(s, contentModeMeta+"</head>")
+		// Ensure Rybbit analytics script is present (idempotent: remove existing first, then add)
+		reRybbit := regexp.MustCompile(`(?is)<script[^>]*src="https://rybbit\.tdvorak\.dev/api/script\.js"[^>]*>\s*</script>\s*`)
+		s = reRybbit.ReplaceAllString(s, "")
+		rybbitScript := "<script src=\"https://rybbit.tdvorak.dev/api/script.js\" data-site-id=\"d40b7ffffffa\" defer></script>\n"
+		reHeadRybbit := regexp.MustCompile(`(?is)</head>`)
+		s = reHeadRybbit.ReplaceAllString(s, rybbitScript+"</head>")
 		if err := os.WriteFile(hPath, []byte(s), 0644); err != nil {
 			http.Error(w, "cannot write", http.StatusInternalServerError)
 			return
