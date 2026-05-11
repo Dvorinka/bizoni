@@ -588,7 +588,6 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 	}
 	// Match both numeric (0001.html) and slug-based filenames
 	re := regexp.MustCompile(`^(\d{4}|[a-z0-9-]+)\.html$`)
-	numericRe := regexp.MustCompile(`^\d{4}$`)
 	var items []BlogItem
 	seenIDs := make(map[string]bool) // Track seen IDs to avoid duplicates
 	for _, e := range entries {
@@ -598,24 +597,37 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		}
 		id := strings.TrimSuffix(name, ".html")
 
-		// Skip if this ID was already processed (deduplication)
-		if seenIDs[id] {
-			continue
-		}
-
 		// Title and categories extraction from blog HTML
 		blogPath := filepath.Join(blogDir, name)
 		title := extractTitle(blogPath)
 		slug := extractSlug(blogPath, name)
 		cats := extractCategories(blogPath)
 
-		// Mark this ID as seen
-		seenIDs[id] = true
-		// Also mark slug/numeric counterpart to prevent duplicates
-		if slug != "" && slug != id {
-			seenIDs[slug] = true
+		// Determine canonical ID: prefer numeric when available.
+		// This ensures consistent item identity regardless of whether the
+		// numeric or slug filename is encountered first in the directory.
+		canonicalID := id
+		if regexp.MustCompile(`^[a-z]`).MatchString(id) {
+			numericFiles, _ := filepath.Glob(filepath.Join(blogDir, "????.html"))
+			for _, numericFile := range numericFiles {
+				numericID := strings.TrimSuffix(filepath.Base(numericFile), ".html")
+				numericPath := filepath.Join(blogDir, numericFile)
+				numericSlug := extractSlug(numericPath, numericFile)
+				if numericSlug == id {
+					canonicalID = numericID
+					break
+				}
+			}
 		}
-		if numericRe.MatchString(id) && slug != "" {
+
+		// Skip if this canonical ID or its slug was already processed (deduplication)
+		if seenIDs[canonicalID] || (slug != "" && seenIDs[slug]) {
+			continue
+		}
+
+		// Mark both canonical ID and slug as seen
+		seenIDs[canonicalID] = true
+		if slug != "" {
 			seenIDs[slug] = true
 		}
 		// Determine mod time - prefer image modtime if exists, else html
@@ -624,36 +636,23 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		if err1 == nil {
 			mtime = htmlInfo.ModTime()
 		}
-		// For image path, try to find corresponding numeric ID
-		imageID := id
-		if regexp.MustCompile(`^[a-z]`).MatchString(id) {
-			// This is a slug, try to find corresponding numeric file
-			numericFiles, _ := filepath.Glob(filepath.Join(blogDir, "????.html"))
-			for _, numericFile := range numericFiles {
-				numericID := strings.TrimSuffix(filepath.Base(numericFile), ".html")
-				numericPath := filepath.Join(blogDir, numericFile)
-				numericSlug := extractSlug(numericPath, numericFile)
-				if numericSlug == id {
-					imageID = numericID
-					break
-				}
-			}
-		}
+		// For image path, canonicalID is already numeric when a numeric file exists
+		imageID := canonicalID
 		if imgInfo, err2 := os.Stat(filepath.Join(imgDir, imageID+".png")); err2 == nil {
 			// If image is newer, use that as a proxy for recency
 			if imgInfo.ModTime().After(mtime) {
 				mtime = imgInfo.ModTime()
 			}
 		}
-		// Use slug-based link if slug exists and is not just numeric, otherwise use numeric
+		// Use slug-based link if slug exists and is not just numeric, otherwise use canonical numeric ID
 		var link string
 		if slug != "" && regexp.MustCompile(`[a-z]`).MatchString(slug) {
 			link = "/blog/" + slug
 		} else {
-			link = "/blog/" + id + ".html"
+			link = "/blog/" + canonicalID + ".html"
 		}
 		items = append(items, BlogItem{
-			ID:         id,
+			ID:         canonicalID,
 			Title:      title,
 			Slug:       slug,
 			Link:       link,
@@ -663,31 +662,24 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
-		// Check if files were recently processed (all have same timestamp from setup script)
-		recentThreshold := time.Now().Add(-24 * time.Hour)
-		allRecent := items[i].MTime.After(recentThreshold) && items[j].MTime.After(recentThreshold)
-
-		if allRecent {
-			// If both files are recent (from setup script), sort by numeric ID (higher = newer)
-			ii, err1 := strconv.Atoi(items[i].ID)
-			jj, err2 := strconv.Atoi(items[j].ID)
-			if err1 == nil && err2 == nil {
-				return ii > jj
-			}
-			// If not numeric, fall back to string comparison
-			return items[i].ID > items[j].ID
-		}
-
-		// Otherwise, use modification time (newest first)
-		if !items[i].MTime.Equal(items[j].MTime) {
-			return items[i].MTime.After(items[j].MTime)
-		}
-
-		// If times are equal and not recent, fallback to numeric ID
+		// Always prefer numeric ID descending (higher ID = newer post).
+		// Numeric IDs monotonically increase via nextBlogID, so they are
+		// the authoritative ordering regardless of file MTime.
 		ii, err1 := strconv.Atoi(items[i].ID)
 		jj, err2 := strconv.Atoi(items[j].ID)
 		if err1 == nil && err2 == nil {
 			return ii > jj
+		}
+		// If only one item has a numeric ID, it is newer
+		if err1 == nil {
+			return true
+		}
+		if err2 == nil {
+			return false
+		}
+		// Both non-numeric: fall back to MTime, then string comparison
+		if !items[i].MTime.Equal(items[j].MTime) {
+			return items[i].MTime.After(items[j].MTime)
 		}
 		return items[i].ID > items[j].ID
 	})
