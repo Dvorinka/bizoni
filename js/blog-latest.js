@@ -51,6 +51,12 @@
       const res = await fetch('/api/blog/latest?limit=12', {credentials: 'omit'});
       if (!res.ok) throw new Error('HTTP '+res.status);
       let items = await res.json();
+      // Defensive sort: numeric ID descending ensures newest first regardless of API ordering
+      items.sort((a,b)=>{
+        const ai = parseInt(a.id,10); const bi = parseInt(b.id,10);
+        if (!isNaN(ai) && !isNaN(bi)) return bi-ai;
+        return (b.id||'').localeCompare(a.id||'');
+      });
       if (primary) primary.innerHTML = '';
       if (!Array.isArray(items) || items.length === 0) {
         if (primary) primary.innerHTML = '<div style="width:100%;text-align:center;padding:12px;color:#888;">Žádné příspěvky zatím nejsou.</div>';

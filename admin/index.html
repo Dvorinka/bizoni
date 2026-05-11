@@ -53,7 +53,13 @@
       try {
         const res = await fetch('/api/blog/latest?limit=12');
         if (!res.ok) throw new Error('HTTP '+res.status);
-        const items = await res.json();
+        let items = await res.json();
+        // Defensive sort: numeric ID descending ensures newest first regardless of API ordering
+        items.sort((a,b)=>{
+          const ai = parseInt(a.id,10); const bi = parseInt(b.id,10);
+          if (!isNaN(ai) && !isNaN(bi)) return bi-ai;
+          return (b.id||'').localeCompare(a.id||'');
+        });
         status.textContent = `Nalezeno: ${items.length}`;
         mount.innerHTML = '';
         if (!Array.isArray(items) || items.length === 0) {
