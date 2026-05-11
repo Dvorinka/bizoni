@@ -330,6 +330,14 @@ func refreshVideos(ctx context.Context) error {
 		return fmt.Errorf("yt get: %w", err)
 	}
 	items := resp.Videos
+	if len(items) == 0 {
+		// API returned empty data; keep existing local videos as fallback
+		vc.mu.RLock()
+		existingCount := len(vc.data.Items)
+		vc.mu.RUnlock()
+		log.Printf("warn: yt api returned 0 videos; keeping %d existing videos", existingCount)
+		return nil
+	}
 	if len(items) > 5 {
 		items = items[:5]
 	}
@@ -394,6 +402,28 @@ func writeVideosJSON() error {
 			log.Printf("warn: write static video.json: %v", err)
 		}
 	}()
+	return nil
+}
+
+func loadVideosJSON() error {
+	path := videosPath()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read videos json: %w", err)
+	}
+	var payload struct {
+		FetchedAt time.Time `json:"fetched_at"`
+		Channel   string    `json:"channel"`
+		Items     []YTVideo `json:"items"`
+	}
+	if err := json.Unmarshal(b, &payload); err != nil {
+		return fmt.Errorf("unmarshal videos json: %w", err)
+	}
+	vc.mu.Lock()
+	vc.data.FetchedAt = payload.FetchedAt
+	vc.data.Channel = payload.Channel
+	vc.data.Items = payload.Items
+	vc.mu.Unlock()
 	return nil
 }
 
@@ -689,6 +719,26 @@ func listLatestBlogs(siteRoot string, limit int) ([]BlogItem, error) {
 	return items, nil
 }
 
+// validateBlogOrdering performs a startup health check to catch ordering regressions early.
+func validateBlogOrdering(siteRoot string) error {
+	items, err := listLatestBlogs(siteRoot, 12)
+	if err != nil {
+		return err
+	}
+	if len(items) < 2 {
+		return nil
+	}
+	for i := 0; i < len(items)-1; i++ {
+		ii, e1 := strconv.Atoi(items[i].ID)
+		jj, e2 := strconv.Atoi(items[i+1].ID)
+		if e1 == nil && e2 == nil && ii <= jj {
+			return fmt.Errorf("blog ordering suspect: %s (%d) should be newer than %s (%d)", items[i].ID, ii, items[i+1].ID, jj)
+		}
+	}
+	log.Printf("blog ordering validated: newest=%s total=%d", items[0].ID, len(items))
+	return nil
+}
+
 // extractTitle finds the first <h1>...</h1> and returns its inner text (very simple, best-effort)
 func extractTitle(path string) string {
 	b, err := os.ReadFile(path)
@@ -824,9 +874,19 @@ func main() {
 	go scheduler(ctx)
 	go videosScheduler(ctx)
 
+	// Load previously persisted videos so we have a fallback if yt api fails
+	if err := loadVideosJSON(); err != nil {
+		log.Printf("no persisted videos to load: %v", err)
+	}
+
 	// Initial videos fetch on startup to warm cache
 	if err := refreshVideos(ctx); err != nil {
 		log.Printf("initial videos refresh error: %v", err)
+	}
+
+	// Startup validation: warn if blog ordering looks wrong
+	if err := validateBlogOrdering(staticPath()); err != nil {
+		log.Printf("blog ordering validation: %v", err)
 	}
 
 	mux := http.NewServeMux()
