@@ -27,9 +27,12 @@ import (
 )
 
 const (
-	clubID   = "441d3783-06aa-436a-b438-359300ee0371"
-	clubType = "futsal"
-	baseURL  = "https://facr.tdvorak.dev"
+	clubID          = "441d3783-06aa-436a-b438-359300ee0371"
+	clubType        = "futsal"
+	baseURL         = "https://facr.tdvorak.dev"
+	fallbackBaseURL = "https://flashscore.tdvorak.dev"
+	fallbackClubID  = "xzS3gX3T"
+	fallbackSlug    = "uherske-hradiste"
 )
 
 // Paths
@@ -1652,12 +1655,26 @@ func refresh(ctx context.Context) error {
 	urlTable := fmt.Sprintf("%s/club/%s/%s/table", baseURL, clubType, clubID)
 
 	var detail ClubDetail
-	if err := getJSON(ctx, client, urlDetail, &detail); err != nil {
-		return fmt.Errorf("detail: %w", err)
-	}
 	var table ClubTable
-	if err := getJSON(ctx, client, urlTable, &table); err != nil {
-		return fmt.Errorf("table: %w", err)
+	var activeClubID string
+
+	// Try primary API first
+	if err := getJSON(ctx, client, urlDetail, &detail); err != nil {
+		log.Printf("primary api detail failed (%v), trying fallback", err)
+		urlDetail = fmt.Sprintf("%s/club/%s/%s?slug=%s", fallbackBaseURL, clubType, fallbackClubID, fallbackSlug)
+		urlTable = fmt.Sprintf("%s/club/%s/%s/table?slug=%s", fallbackBaseURL, clubType, fallbackClubID, fallbackSlug)
+		if err := getJSON(ctx, client, urlDetail, &detail); err != nil {
+			return fmt.Errorf("fallback detail: %w", err)
+		}
+		if err := getJSON(ctx, client, urlTable, &table); err != nil {
+			return fmt.Errorf("fallback table: %w", err)
+		}
+		activeClubID = fallbackClubID
+	} else {
+		if err := getJSON(ctx, client, urlTable, &table); err != nil {
+			return fmt.Errorf("table: %w", err)
+		}
+		activeClubID = clubID
 	}
 
 	// Override or inject facr_link based on match_id
@@ -1668,10 +1685,10 @@ func refresh(ctx context.Context) error {
 				detail.Competitions[i].Matches[j].FacrLink = fmt.Sprintf("https://www.fotbal.cz/futsal/zapasy/futsal/%s", mid)
 			}
 			// Override logo URLs for our club in match details
-			if detail.Competitions[i].Matches[j].HomeID == clubID {
+			if detail.Competitions[i].Matches[j].HomeID == activeClubID {
 				detail.Competitions[i].Matches[j].HomeLogoURL = "/img/logo.png"
 			}
-			if detail.Competitions[i].Matches[j].AwayID == clubID {
+			if detail.Competitions[i].Matches[j].AwayID == activeClubID {
 				detail.Competitions[i].Matches[j].AwayLogoURL = "/img/logo.png"
 			}
 		}
@@ -1680,7 +1697,7 @@ func refresh(ctx context.Context) error {
 	// Override logo URLs for our club in the table standings
 	for i := range table.Competitions {
 		for j := range table.Competitions[i].Table.Overall {
-			if table.Competitions[i].Table.Overall[j].TeamID == clubID {
+			if table.Competitions[i].Table.Overall[j].TeamID == activeClubID {
 				table.Competitions[i].Table.Overall[j].TeamLogo = "/img/logo.png"
 			}
 		}
@@ -1698,7 +1715,7 @@ func refresh(ctx context.Context) error {
 	if err := writeDiskJSON(c.data); err != nil {
 		log.Printf("warn: write disk json: %v", err)
 	}
-	log.Printf("refreshed data: comps=%d", len(detail.Competitions))
+	log.Printf("refreshed data: comps=%d source=%s", len(detail.Competitions), map[bool]string{true: "fallback", false: "primary"}[activeClubID == fallbackClubID])
 	return nil
 }
 
