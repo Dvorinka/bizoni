@@ -1660,7 +1660,20 @@ func refresh(ctx context.Context) error {
 
 	// Try primary API first
 	if err := getJSON(ctx, client, urlDetail, &detail); err != nil {
-		log.Printf("primary api detail failed (%v), trying fallback", err)
+		log.Printf("primary api detail failed (%v), trying futsalliga scrape", err)
+		// Second source: scrape the official league site (current data, correct competition)
+		if comb, serr := scrapeFutsalLiga(ctx, client); serr == nil {
+			c.mu.Lock()
+			c.data = comb
+			c.mu.Unlock()
+			if werr := writeDiskJSON(c.data); werr != nil {
+				log.Printf("warn: write disk json: %v", werr)
+			}
+			log.Printf("refreshed data: comps=%d source=%s", len(comb.ClubDetail.Competitions), "futsalliga")
+			return nil
+		} else {
+			log.Printf("futsalliga scrape failed (%v), trying flashscore fallback", serr)
+		}
 		urlDetail = fmt.Sprintf("%s/club/%s/%s?slug=%s", fallbackBaseURL, clubType, fallbackClubID, fallbackSlug)
 		urlTable = fmt.Sprintf("%s/club/%s/%s/table?slug=%s", fallbackBaseURL, clubType, fallbackClubID, fallbackSlug)
 		if err := getJSON(ctx, client, urlDetail, &detail); err != nil {
