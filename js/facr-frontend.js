@@ -391,10 +391,13 @@
     const comps = state.data.club_detail.competitions || [];
     const sections = [];
     for(const comp of comps){
-      const matches = (comp.matches || [])
+      const now = new Date();
+      const dated = (comp.matches || [])
         .map(m=>({ m, dt: parseCZDate(m.date_time) }))
-        .filter(x=>!!x.dt)
-        .sort((a,b)=> b.dt - a.dt);
+        .filter(x=>!!x.dt);
+      const played = dated.filter(x=> x.dt <= now).sort((a,b)=> b.dt - a.dt);
+      const upcoming = dated.filter(x=> x.dt > now).sort((a,b)=> a.dt - b.dt);
+      const matches = played.concat(upcoming);
       if(matches.length === 0) continue;
       const compName = truncate(escapeHTML(comp.name || comp.code || 'Soutěž'), 40);
       const itemsHtml = matches.map(({m})=>{
